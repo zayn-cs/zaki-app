@@ -31,6 +31,7 @@ interface Document {
   id_phase?: number;
   id_type?: number;
   is_global?: boolean;
+  id_utilisateur?: number;
 }
 
 interface Version {
@@ -44,6 +45,7 @@ interface Version {
 interface Projet { id_projet: number; programme?: string; }
 interface TypeDoc { id: number; lib_type: string; allowed_formats?: string | null; }
 interface Phase { id_phase: number; nome_phase: string; id_lot?: number; }
+interface Utilisateur { id: number; nom: string; prenom: string; }
 
 const STATUT_COLORS: Record<string, string> = {
   actif: "bg-green-100 text-green-700",
@@ -63,7 +65,7 @@ export default function DocumentsPage() {
   const [statutFilter, setStatutFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDoc, setEditDoc] = useState<Document | null>(null);
-  const [form, setForm] = useState({ nom_doc: "", id_projet: "", id_lot: "", id_phase: "", nom_phase: "", id_type: "", type_name: "", commentaire: "", is_global: "false" });
+  const [form, setForm] = useState({ nom_doc: "", id_projet: "", id_lot: "", id_phase: "", nom_phase: "", id_type: "", type_name: "", commentaire: "", is_global: "false", id_utilisateur: "" });
   const [saving, setSaving] = useState(false);
   const [uploadDocId, setUploadDocId] = useState<number | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -102,6 +104,11 @@ export default function DocumentsPage() {
     queryFn: () => fetch(apiUrl("/lots"), { credentials: "include" }).then(r => r.json()),
   });
 
+  const { data: utilisateurs = [] } = useQuery<Utilisateur[]>({
+    queryKey: ["utilisateurs"],
+    queryFn: () => fetch(apiUrl("/utilisateurs"), { credentials: "include" }).then(r => r.json()),
+  });
+
   const { data: versions = [] } = useQuery<Version[]>({
     queryKey: ["versions", versionsDocId],
     queryFn: () => fetch(apiUrl(`/documents/${versionsDocId}/versions`), { credentials: "include" }).then(r => r.json()),
@@ -123,7 +130,8 @@ export default function DocumentsPage() {
       id_type: "",
       type_name: "",
       commentaire: "",
-      is_global: "false"
+      is_global: "false",
+      id_utilisateur: ""
     });
     setDialogOpen(true);
   };
@@ -140,6 +148,7 @@ export default function DocumentsPage() {
       type_name: d.type_document ?? "",
       commentaire: d.commentaire ?? "",
       is_global: d.is_global ? "true" : "false",
+      id_utilisateur: d.id_utilisateur?.toString() ?? "",
     });
     setDialogOpen(true);
   };
@@ -158,6 +167,7 @@ export default function DocumentsPage() {
         type_name: form.type_name,
         commentaire: form.commentaire,
         is_global: form.is_global === "true",
+        id_utilisateur: form.id_utilisateur ? parseInt(form.id_utilisateur) : null,
       };
 
       const url = editDoc ? apiUrl(`/documents/${editDoc.id_document}`) : apiUrl("/documents");
@@ -396,6 +406,15 @@ export default function DocumentsPage() {
                       })()}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Responsable</Label>
+              <Select value={form.id_utilisateur} onValueChange={v => setForm(f => ({ ...f, id_utilisateur: v }))}>
+                <SelectTrigger><SelectValue placeholder="Choisir un responsable" /></SelectTrigger>
+                <SelectContent>
+                  {utilisateurs.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.prenom} {u.nom}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

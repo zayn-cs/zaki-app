@@ -32,7 +32,7 @@ export default function LotsPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editLot, setEditLot] = useState<Lot | null>(null);
-  const [form, setForm] = useState({ nom_lot: "", id_projet: "", id_departement: "", id_user: "" });
+  const [form, setForm] = useState({ nom_lot: "", id_departement: "" });
   const [saving, setSaving] = useState(false);
 
   const { data: lots = [], isLoading } = useQuery<Lot[]>({
@@ -61,7 +61,7 @@ export default function LotsPage() {
 
   const openCreate = () => {
     setEditLot(null);
-    setForm({ nom_lot: "", id_projet: "", id_departement: "", id_user: "" });
+    setForm({ nom_lot: "", id_departement: "" });
     setDialogOpen(true);
   };
 
@@ -69,9 +69,7 @@ export default function LotsPage() {
     setEditLot(l);
     setForm({
       nom_lot: l.nom_lot,
-      id_projet: l.id_projet?.toString() ?? "",
       id_departement: l.id_departement?.toString() ?? "",
-      id_user: "",
     });
     setDialogOpen(true);
   };
@@ -82,9 +80,7 @@ export default function LotsPage() {
     try {
       const body = {
         nom_lot: form.nom_lot,
-        id_projet: form.id_projet ? parseInt(form.id_projet) : null,
         id_departement: form.id_departement ? parseInt(form.id_departement) : null,
-        id_user: form.id_user ? parseInt(form.id_user) : null,
       };
 
       const url = editLot ? apiUrl(`/lots/${editLot.id_lot}`) : apiUrl("/lots");
@@ -191,29 +187,11 @@ export default function LotsPage() {
               <Input data-testid="input-nom-lot" value={form.nom_lot} onChange={e => setForm(f => ({ ...f, nom_lot: e.target.value }))} placeholder="Nom du lot" />
             </div>
             <div className="space-y-2">
-              <Label>Projet</Label>
-              <Select value={form.id_projet} onValueChange={v => setForm(f => ({ ...f, id_projet: v }))}>
-                <SelectTrigger><SelectValue placeholder="Choisir un projet" /></SelectTrigger>
-                <SelectContent>
-                  {projets.map(p => <SelectItem key={p.id_projet} value={p.id_projet.toString()}>{p.programme ?? `Projet #${p.id_projet}`}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label>Département</Label>
               <Select value={form.id_departement} onValueChange={v => setForm(f => ({ ...f, id_departement: v }))}>
                 <SelectTrigger><SelectValue placeholder="Choisir un département" /></SelectTrigger>
                 <SelectContent>
                   {departements.map(d => <SelectItem key={d.id} value={d.id.toString()}>{d.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Responsable</Label>
-              <Select value={form.id_user} onValueChange={v => setForm(f => ({ ...f, id_user: v }))}>
-                <SelectTrigger><SelectValue placeholder="Choisir un responsable" /></SelectTrigger>
-                <SelectContent>
-                  {utilisateurs.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.prenom} {u.nom}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

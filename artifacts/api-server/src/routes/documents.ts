@@ -77,7 +77,7 @@ router.get("/documents", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.post("/documents", requireAuth, requireRole(...ALL_ROLES), async (req, res): Promise<void> => {
-  const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name } = req.body;
+  const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name, id_utilisateur } = req.body;
 
   if (!nom_doc) {
     res.status(400).json({ error: "Nom du document requis" });
@@ -112,7 +112,7 @@ router.post("/documents", requireAuth, requireRole(...ALL_ROLES), async (req, re
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id as id_document`,
       [nom_doc, is_global ? 1 : 0, finalPhaseId, commentaire, id_projet || null,
-       finalTypeId, STATUT_ACTIF, req.session.user?.id || null]
+       finalTypeId, STATUT_ACTIF, id_utilisateur || req.session.user?.id || null]
     );
 
     const newId = result.rows[0].id_document as number;
@@ -194,7 +194,7 @@ router.patch("/documents/:id", requireAuth, requireRole(...ALL_ROLES), async (re
   }
 
   try {
-    const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name } = req.body;
+    const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name, id_utilisateur } = req.body;
 
     let finalTypeId = id_type || undefined;
     if (type_name) {
@@ -225,9 +225,10 @@ router.patch("/documents/:id", requireAuth, requireRole(...ALL_ROLES), async (re
         id_phase = COALESCE($3, id_phase),
         commentaire = COALESCE($4, commentaire),
         id_projet = COALESCE($5, id_projet),
-        id_type = COALESCE($6, id_type)
-       WHERE id = $7`,
-      [nom_doc, is_global !== undefined ? (is_global ? 1 : 0) : undefined, finalPhaseId, commentaire, id_projet, finalTypeId, id]
+        id_type = COALESCE($6, id_type),
+        id_utilisateur = COALESCE($7, id_utilisateur)
+       WHERE id = $8`,
+      [nom_doc, is_global !== undefined ? (is_global ? 1 : 0) : undefined, finalPhaseId, commentaire, id_projet, finalTypeId, id_utilisateur, id]
     );
 
     await logHistorique(
