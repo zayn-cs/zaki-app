@@ -1,0 +1,241 @@
+Je veux que tu développes une application web complète de gestion et d’archivage de projets d’infrastructures, en partant d’une base de données MySQL déjà existante que je vais fournir/importer.
+
+IMPORTANT :
+- Le projet doit être construit en respectant ma base de données existante.
+- N’invente pas un autre modèle de données si les tables existent déjà.
+- Analyse d’abord le schéma MySQL existant, les tables, les colonnes, les clés étrangères et les relations.
+- Ensuite, génère le backend, le frontend et les fonctionnalités en t’appuyant sur cette base réelle.
+- Si certaines tables manquent pour une fonctionnalité indispensable (par exemple historique, versions, rôles, permissions), propose-les clairement avant de les créer.
+- Je veux un projet structuré, propre, professionnel et facile à exécuter sur Replit.
+
+CONTEXTE DU PROJET :
+Il s’agit d’un projet de fin d’études : conception et développement d’une application d’archivage performant des projets d’infrastructures avec recherche multicritère avancée.
+La hiérarchie métier principale du système est :
+Projet → Lot → Phase → Document → Version
+
+Le système doit permettre :
+- la gestion des départements
+- la gestion des projets
+- la gestion des lots
+- la gestion des phases
+- la gestion des documents
+- la gestion des versions des documents
+- l’archivage des documents
+- la recherche multicritère performante
+- la traçabilité / historique des actions
+- le contrôle d’accès selon les rôles
+
+ROLES UTILISATEURS À PRENDRE EN CHARGE :
+- Administrateur
+- Coordinateur
+- Chef de département
+- Chef projet
+- Responsable de lot
+
+COMPORTEMENT ATTENDU PAR RÔLE :
+1. Administrateur
+- consulter toutes les informations
+- gérer les comptes utilisateurs
+- superviser le système
+
+2. Coordinateur
+- consulter toutes les informations
+- créer département
+- créer projet
+- créer lot
+- créer phase
+- créer unité
+- créer BET
+- éventuellement gérer certaines structures globales
+
+3. Chef de département
+- consulter les informations de son département
+- rechercher
+- modifier selon permissions
+- supprimer selon permissions
+- uploader des documents liés à son périmètre
+
+4. Chef projet
+- consulter les informations de son projet
+- rechercher
+- modifier selon permissions
+- supprimer selon permissions
+- uploader des documents liés à son projet
+
+5. Responsable de lot
+- consulter les informations de son lot
+- rechercher
+- modifier selon permissions
+- supprimer selon permissions
+- uploader des documents liés à son lot
+
+FONCTIONNALITÉS PRINCIPALES À IMPLÉMENTER :
+1. Authentification
+- page login
+- authentification sécurisée
+- gestion de session
+- redirection selon le rôle
+- protection des routes
+
+2. Tableau de bord
+- dashboard adapté à chaque rôle
+- statistiques simples :
+  - nombre de projets
+  - nombre de lots
+  - nombre de phases
+  - nombre de documents
+  - nombre de documents archivés
+  - éventuellement activité récente
+
+3. Gestion des entités métier
+- CRUD sur :
+  - départements
+  - projets
+  - lots
+  - phases
+  - unités
+  - BET
+  - utilisateurs
+- utiliser les relations existantes dans la base
+
+4. Gestion des documents
+- ajout / upload d’un document
+- association du document à un projet, lot et phase
+- métadonnées utiles :
+  - nom
+  - type
+  - description
+  - date
+  - version
+  - auteur / utilisateur
+  - statut
+- gestion des fichiers stockés sur disque ou dans un dossier uploads
+- conservation de l’URL ou chemin du fichier en base
+
+5. Gestion des versions
+- lorsqu’un nouveau fichier est déposé pour un même document, créer une nouvelle version
+- conserver l’historique des versions
+- permettre la consultation des versions précédentes
+
+6. Archivage
+- permettre d’archiver un document
+- changer son statut en “archivé”
+- enregistrer l’action dans l’historique
+- vérifier les droits d’accès avant l’archivage
+
+7. Recherche multicritère avancée
+Recherche sur les projets selon :
+- description
+- année
+- budget
+- localisation
+- statut
+
+Recherche sur les documents selon :
+- projet
+- lot
+- phase
+- type
+- date
+- version
+- statut
+- mot-clé
+
+Le moteur de recherche doit :
+- combiner plusieurs critères
+- retourner une liste claire
+- trier les résultats par pertinence ou au minimum par date / correspondance
+
+8. Historique / traçabilité
+- journaliser les actions importantes :
+  - connexion
+  - ajout
+  - modification
+  - suppression
+  - upload
+  - archivage
+- afficher un écran d’historique si possible
+
+CONTRAINTE IMPORTANTE SUR LES DIAGRAMMES/FONCTIONNEMENT :
+Je dispose déjà d’une analyse UML et je veux que tu respectes l’idée fonctionnelle suivante :
+
+Séquence upload :
+- utilisateur sélectionne un fichier
+- frontend envoie la requête upload au backend
+- backend vérifie l’authentification
+- backend valide les données
+- backend enregistre le fichier dans le stockage
+- backend enregistre le document et sa version dans la base
+- retour succès au frontend
+
+Séquence recherche :
+- utilisateur saisit les critères
+- frontend envoie une requête de recherche
+- backend construit une requête multicritère dynamique
+- backend exécute la recherche dans la base
+- backend trie les résultats
+- frontend affiche la liste des documents/projets
+
+Séquence archivage :
+- utilisateur choisit un document à archiver
+- frontend envoie la requête d’archivage
+- backend vérifie les droits d’accès
+- backend met à jour le statut du document en “archivé”
+- backend enregistre l’historique de l’action
+- frontend affiche une confirmation
+
+EXIGENCES NON FONCTIONNELLES :
+- application propre et professionnelle
+- code structuré
+- sécurité de base correcte
+- validation côté backend
+- messages d’erreur clairs
+- architecture simple à maintenir
+- temps de réponse correct
+- compatible avec Replit
+
+STACK SOUHAITÉ SUR REPLIT :
+Je veux une stack simple et moderne. Utilise de préférence :
+- Backend : Node.js + Express
+- Base de données : MySQL existante
+- Frontend : HTML/CSS/JavaScript avec templates serveur, ou React si tu estimes que c’est mieux sur Replit
+- Authentification par session ou JWT, mais choisis l’option la plus simple et stable
+- Upload de fichiers avec stockage local dans un dossier dédié
+- ORM ou requêtes SQL claires, au choix, mais compatibles avec la base existante
+
+CE QUE JE VEUX QUE TU FASSES DANS L’ORDRE :
+1. Analyser la structure de ma base de données MySQL existante
+2. Identifier les tables déjà présentes et leurs relations
+3. Me dire quelles fonctionnalités sont déjà couvertes par le schéma
+4. Signaler les tables/champs manquants si nécessaire
+5. Générer l’architecture du projet Replit
+6. Créer le backend Express
+7. Connecter l’application à MySQL
+8. Générer les routes API / contrôleurs / services
+9. Générer les pages ou composants frontend
+10. Créer l’authentification et la gestion des rôles
+11. Implémenter upload, archivage, recherche multicritère et historique
+12. Fournir un projet exécutable directement dans Replit
+
+ATTENDU FINAL :
+Je veux une application fonctionnelle, pas seulement un squelette.
+Je veux pouvoir :
+- me connecter
+- consulter les données
+- gérer projets/lots/phases
+- uploader des documents
+- rechercher avec plusieurs critères
+- archiver un document
+- consulter les versions
+- gérer les utilisateurs selon les rôles
+
+IMPORTANT :
+- Commence par lire/importer la base SQL existante
+- Respecte la structure réelle de la base
+- N’écrase pas inutilement les tables existantes
+- Si tu modifies le schéma, explique pourquoi
+- Donne-moi aussi les instructions de lancement :
+  - installation
+  - variables d’environnement
+  - démarrage
+  - import SQL

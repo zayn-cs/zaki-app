@@ -1,0 +1,1759 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification for the infrastructure archiving system
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: dashboard
+    description: Dashboard statistics
+  - name: departements
+    description: Department management
+  - name: projets
+    description: Project management
+  - name: lots
+    description: Lot management
+  - name: phases
+    description: Phase management
+  - name: documents
+    description: Document management
+  - name: versions
+    description: Version management
+  - name: utilisateurs
+    description: User management
+  - name: bet
+    description: BET management
+  - name: unites
+    description: Unit management
+  - name: historique
+    description: Action history
+  - name: recherche
+    description: Advanced search
+  - name: types
+    description: Document types
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/activite:
+    get:
+      operationId: getActiviteRecente
+      tags: [dashboard]
+      summary: Get recent activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Historique"
+
+  /departements:
+    get:
+      operationId: getDepartements
+      tags: [departements]
+      summary: List all departments
+      responses:
+        "200":
+          description: List of departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Departement"
+    post:
+      operationId: createDepartement
+      tags: [departements]
+      summary: Create a department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartementBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Departement"
+
+  /departements/{id}:
+    get:
+      operationId: getDepartement
+      tags: [departements]
+      summary: Get a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Department
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Departement"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateDepartement
+      tags: [departements]
+      summary: Update a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartementBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Departement"
+    delete:
+      operationId: deleteDepartement
+      tags: [departements]
+      summary: Delete a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /projets:
+    get:
+      operationId: getProjets
+      tags: [projets]
+      summary: List all projects
+      parameters:
+        - name: stade
+          in: query
+          schema:
+            type: string
+        - name: priorite
+          in: query
+          schema:
+            type: string
+        - name: id_departement
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Projet"
+    post:
+      operationId: createProjet
+      tags: [projets]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjetBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Projet"
+
+  /projets/{id}:
+    get:
+      operationId: getProjet
+      tags: [projets]
+      summary: Get a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Projet"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateProjet
+      tags: [projets]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjetBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Projet"
+    delete:
+      operationId: deleteProjet
+      tags: [projets]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /lots:
+    get:
+      operationId: getLots
+      tags: [lots]
+      summary: List all lots
+      parameters:
+        - name: id_projet
+          in: query
+          schema:
+            type: integer
+        - name: id_departement
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of lots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lot"
+    post:
+      operationId: createLot
+      tags: [lots]
+      summary: Create a lot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLotBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lot"
+
+  /lots/{id}:
+    get:
+      operationId: getLot
+      tags: [lots]
+      summary: Get a lot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lot"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateLot
+      tags: [lots]
+      summary: Update a lot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLotBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lot"
+    delete:
+      operationId: deleteLot
+      tags: [lots]
+      summary: Delete a lot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /phases:
+    get:
+      operationId: getPhases
+      tags: [phases]
+      summary: List all phases
+      parameters:
+        - name: id_lot
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of phases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Phase"
+    post:
+      operationId: createPhase
+      tags: [phases]
+      summary: Create a phase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePhaseBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Phase"
+
+  /phases/{id}:
+    get:
+      operationId: getPhase
+      tags: [phases]
+      summary: Get a phase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Phase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Phase"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updatePhase
+      tags: [phases]
+      summary: Update a phase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePhaseBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Phase"
+    delete:
+      operationId: deletePhase
+      tags: [phases]
+      summary: Delete a phase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /documents:
+    get:
+      operationId: getDocuments
+      tags: [documents]
+      summary: List documents
+      parameters:
+        - name: id_projet
+          in: query
+          schema:
+            type: integer
+        - name: id_lot
+          in: query
+          schema:
+            type: integer
+        - name: id_phase
+          in: query
+          schema:
+            type: integer
+        - name: statut
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: createDocument
+      tags: [documents]
+      summary: Create a document (metadata only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [documents]
+      summary: Get a document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateDocument
+      tags: [documents]
+      summary: Update a document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+    delete:
+      operationId: deleteDocument
+      tags: [documents]
+      summary: Delete a document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /documents/{id}/upload:
+    post:
+      operationId: uploadDocument
+      tags: [documents]
+      summary: Upload a file for a document (creates new version)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                commentaire:
+                  type: string
+      responses:
+        "200":
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Version"
+
+  /documents/{id}/archiver:
+    post:
+      operationId: archiverDocument
+      tags: [documents]
+      summary: Archive a document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commentaire:
+                  type: string
+      responses:
+        "200":
+          description: Document archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /documents/{id}/versions:
+    get:
+      operationId: getDocumentVersions
+      tags: [documents]
+      summary: Get all versions of a document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Version"
+
+  /utilisateurs:
+    get:
+      operationId: getUtilisateurs
+      tags: [utilisateurs]
+      summary: List all users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: id_departement
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Utilisateur"
+    post:
+      operationId: createUtilisateur
+      tags: [utilisateurs]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUtilisateurBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Utilisateur"
+
+  /utilisateurs/{id}:
+    get:
+      operationId: getUtilisateur
+      tags: [utilisateurs]
+      summary: Get a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Utilisateur"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateUtilisateur
+      tags: [utilisateurs]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUtilisateurBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Utilisateur"
+    delete:
+      operationId: deleteUtilisateur
+      tags: [utilisateurs]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /bet:
+    get:
+      operationId: getBets
+      tags: [bet]
+      summary: List all BETs
+      responses:
+        "200":
+          description: List of BETs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bet"
+    post:
+      operationId: createBet
+      tags: [bet]
+      summary: Create a BET
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBetBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bet"
+
+  /bet/{id}:
+    get:
+      operationId: getBet
+      tags: [bet]
+      summary: Get a BET
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: BET
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bet"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateBet
+      tags: [bet]
+      summary: Update a BET
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBetBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bet"
+    delete:
+      operationId: deleteBet
+      tags: [bet]
+      summary: Delete a BET
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /unites:
+    get:
+      operationId: getUnites
+      tags: [unites]
+      summary: List all units
+      responses:
+        "200":
+          description: List of units
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Unite"
+    post:
+      operationId: createUnite
+      tags: [unites]
+      summary: Create a unit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUniteBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unite"
+
+  /unites/{id}:
+    patch:
+      operationId: updateUnite
+      tags: [unites]
+      summary: Update a unit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUniteBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unite"
+    delete:
+      operationId: deleteUnite
+      tags: [unites]
+      summary: Delete a unit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /historique:
+    get:
+      operationId: getHistorique
+      tags: [historique]
+      summary: Get action history
+      parameters:
+        - name: id_utilisateur
+          in: query
+          schema:
+            type: integer
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: entite_type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Action history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Historique"
+
+  /recherche/projets:
+    get:
+      operationId: rechercherProjets
+      tags: [recherche]
+      summary: Advanced search for projects
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: stade
+          in: query
+          schema:
+            type: string
+        - name: priorite
+          in: query
+          schema:
+            type: string
+        - name: montant_min
+          in: query
+          schema:
+            type: number
+        - name: montant_max
+          in: query
+          schema:
+            type: number
+        - name: annee_debut
+          in: query
+          schema:
+            type: integer
+        - name: annee_fin
+          in: query
+          schema:
+            type: integer
+        - name: type_projet
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Projet"
+
+  /recherche/documents:
+    get:
+      operationId: rechercherDocuments
+      tags: [recherche]
+      summary: Advanced search for documents
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: id_projet
+          in: query
+          schema:
+            type: integer
+        - name: id_lot
+          in: query
+          schema:
+            type: integer
+        - name: id_phase
+          in: query
+          schema:
+            type: integer
+        - name: id_type
+          in: query
+          schema:
+            type: integer
+        - name: statut
+          in: query
+          schema:
+            type: string
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+
+  /types:
+    get:
+      operationId: getTypes
+      tags: [types]
+      summary: List document types
+      responses:
+        "200":
+          description: List of types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TypeDocument"
+    post:
+      operationId: createType
+      tags: [types]
+      summary: Create a document type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTypeBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TypeDocument"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    LoginBody:
+      type: object
+      properties:
+        messager:
+          type: string
+        mot_pass:
+          type: string
+      required:
+        - messager
+        - mot_pass
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        prenom:
+          type: string
+        messager:
+          type: string
+        role:
+          type: string
+        grade:
+          type: string
+        adresse:
+          type: string
+        telephone_professional:
+          type: ["integer", "null"]
+        telephone_personnel:
+          type: ["integer", "null"]
+        is_chef_project:
+          type: boolean
+        id_departement:
+          type: ["integer", "null"]
+        nom_departement:
+          type: ["string", "null"]
+      required:
+        - id
+        - nom
+        - prenom
+        - messager
+        - role
+        - grade
+        - adresse
+        - is_chef_project
+
+    DashboardStats:
+      type: object
+      properties:
+        nb_projets:
+          type: integer
+        nb_lots:
+          type: integer
+        nb_phases:
+          type: integer
+        nb_documents:
+          type: integer
+        nb_documents_archives:
+          type: integer
+        nb_utilisateurs:
+          type: integer
+        nb_departements:
+          type: integer
+      required:
+        - nb_projets
+        - nb_lots
+        - nb_phases
+        - nb_documents
+        - nb_documents_archives
+        - nb_utilisateurs
+        - nb_departements
+
+    Departement:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+      required:
+        - id
+        - nom
+
+    CreateDepartementBody:
+      type: object
+      properties:
+        nom:
+          type: string
+      required:
+        - nom
+
+    Projet:
+      type: object
+      properties:
+        id_projet:
+          type: integer
+        numero:
+          type: ["number", "null"]
+        id_unite:
+          type: ["integer", "null"]
+        pa:
+          type: ["string", "null"]
+        numero_op:
+          type: ["string", "null"]
+        montant_delegue:
+          type: ["number", "null"]
+        montant_engagement:
+          type: ["number", "null"]
+        montant_paiement:
+          type: ["number", "null"]
+        programme:
+          type: ["string", "null"]
+        stade:
+          type: ["string", "null"]
+        situation_objectif:
+          type: ["string", "null"]
+        contrainte:
+          type: ["string", "null"]
+        id_bet:
+          type: ["integer", "null"]
+        delais:
+          type: ["integer", "null"]
+        debut_etude:
+          type: ["string", "null"]
+        fin_etude:
+          type: ["string", "null"]
+        fin_prev:
+          type: ["string", "null"]
+        observation:
+          type: ["string", "null"]
+        priorite:
+          type: ["string", "null"]
+        type:
+          type: ["string", "null"]
+        date_achevement:
+          type: ["string", "null"]
+        chef_projet:
+          type: ["integer", "null"]
+        nom_bet:
+          type: ["string", "null"]
+        nom_unite:
+          type: ["string", "null"]
+        nom_chef_projet:
+          type: ["string", "null"]
+      required:
+        - id_projet
+
+    CreateProjetBody:
+      type: object
+      properties:
+        numero:
+          type: number
+        id_unite:
+          type: integer
+        pa:
+          type: string
+        numero_op:
+          type: string
+        montant_delegue:
+          type: number
+        montant_engagement:
+          type: number
+        montant_paiement:
+          type: number
+        programme:
+          type: string
+        stade:
+          type: string
+        situation_objectif:
+          type: string
+        contrainte:
+          type: string
+        id_bet:
+          type: integer
+        delais:
+          type: integer
+        debut_etude:
+          type: string
+        fin_etude:
+          type: string
+        fin_prev:
+          type: string
+        observation:
+          type: string
+        priorite:
+          type: string
+        type:
+          type: string
+        date_achevement:
+          type: string
+        chef_projet:
+          type: integer
+
+    Lot:
+      type: object
+      properties:
+        id_lot:
+          type: integer
+        nom_lot:
+          type: string
+        id_user:
+          type: ["integer", "null"]
+        id_departement:
+          type: ["integer", "null"]
+        id_projet:
+          type: ["integer", "null"]
+        nom_departement:
+          type: ["string", "null"]
+        nom_responsable:
+          type: ["string", "null"]
+        nom_projet:
+          type: ["string", "null"]
+      required:
+        - id_lot
+        - nom_lot
+
+    CreateLotBody:
+      type: object
+      properties:
+        nom_lot:
+          type: string
+        id_user:
+          type: integer
+        id_departement:
+          type: integer
+        id_projet:
+          type: integer
+      required:
+        - nom_lot
+
+    Phase:
+      type: object
+      properties:
+        id_phase:
+          type: integer
+        nome_phase:
+          type: string
+        date_debut:
+          type: ["string", "null"]
+        date_fin:
+          type: ["string", "null"]
+        id_user:
+          type: ["integer", "null"]
+        id_lot:
+          type: ["integer", "null"]
+        nom_lot:
+          type: ["string", "null"]
+        nom_responsable:
+          type: ["string", "null"]
+      required:
+        - id_phase
+        - nome_phase
+
+    CreatePhaseBody:
+      type: object
+      properties:
+        nome_phase:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        id_user:
+          type: integer
+        id_lot:
+          type: integer
+      required:
+        - nome_phase
+
+    Document:
+      type: object
+      properties:
+        id_document:
+          type: integer
+        nom_doc:
+          type: string
+        chemin:
+          type: ["string", "null"]
+        is_global:
+          type: boolean
+        date_creation:
+          type: ["string", "null"]
+        id_phase:
+          type: ["integer", "null"]
+        commentaire:
+          type: ["string", "null"]
+        id_version:
+          type: ["integer", "null"]
+        id_projet:
+          type: ["integer", "null"]
+        id_type:
+          type: ["integer", "null"]
+        statut:
+          type: ["string", "null"]
+        id_utilisateur:
+          type: ["integer", "null"]
+        nom_projet:
+          type: ["string", "null"]
+        nom_phase:
+          type: ["string", "null"]
+        lib_type:
+          type: ["string", "null"]
+        nom_auteur:
+          type: ["string", "null"]
+        numero_version:
+          type: ["integer", "null"]
+      required:
+        - id_document
+        - nom_doc
+
+    CreateDocumentBody:
+      type: object
+      properties:
+        nom_doc:
+          type: string
+        is_global:
+          type: boolean
+        id_phase:
+          type: integer
+        commentaire:
+          type: string
+        id_projet:
+          type: integer
+        id_type:
+          type: integer
+        id_utilisateur:
+          type: integer
+      required:
+        - nom_doc
+
+    UpdateDocumentBody:
+      type: object
+      properties:
+        nom_doc:
+          type: string
+        is_global:
+          type: boolean
+        id_phase:
+          type: integer
+        commentaire:
+          type: string
+        id_projet:
+          type: integer
+        id_type:
+          type: integer
+        statut:
+          type: string
+
+    Version:
+      type: object
+      properties:
+        id_version:
+          type: integer
+        numero_version:
+          type: integer
+        date_modification:
+          type: ["string", "null"]
+        fichier_path:
+          type: ["string", "null"]
+        commentaire:
+          type: ["string", "null"]
+        id_document:
+          type: ["integer", "null"]
+      required:
+        - id_version
+        - numero_version
+
+    Utilisateur:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        prenom:
+          type: string
+        messager:
+          type: string
+        role:
+          type: string
+        grade:
+          type: string
+        adresse:
+          type: string
+        telephone_professional:
+          type: ["integer", "null"]
+        telephone_personnel:
+          type: ["integer", "null"]
+        is_chef_project:
+          type: boolean
+        id_departement:
+          type: ["integer", "null"]
+        nom_departement:
+          type: ["string", "null"]
+      required:
+        - id
+        - nom
+        - prenom
+        - messager
+        - role
+        - grade
+        - adresse
+        - is_chef_project
+
+    CreateUtilisateurBody:
+      type: object
+      properties:
+        nom:
+          type: string
+        prenom:
+          type: string
+        messager:
+          type: string
+        mot_pass:
+          type: string
+        role:
+          type: string
+        grade:
+          type: string
+        adresse:
+          type: string
+        telephone_professional:
+          type: integer
+        telephone_personnel:
+          type: integer
+        is_chef_project:
+          type: boolean
+        id_departement:
+          type: integer
+      required:
+        - nom
+        - prenom
+        - messager
+        - mot_pass
+        - role
+        - grade
+        - adresse
+
+    UpdateUtilisateurBody:
+      type: object
+      properties:
+        nom:
+          type: string
+        prenom:
+          type: string
+        messager:
+          type: string
+        mot_pass:
+          type: string
+        role:
+          type: string
+        grade:
+          type: string
+        adresse:
+          type: string
+        telephone_professional:
+          type: integer
+        telephone_personnel:
+          type: integer
+        is_chef_project:
+          type: boolean
+        id_departement:
+          type: integer
+
+    Bet:
+      type: object
+      properties:
+        id_bet:
+          type: integer
+        nom_bet:
+          type: string
+        adresse:
+          type: ["string", "null"]
+        telephone_fixe:
+          type: ["integer", "null"]
+        nom_gerant:
+          type: ["string", "null"]
+        prenom_gerant:
+          type: ["string", "null"]
+        telephone_bet:
+          type: ["integer", "null"]
+      required:
+        - id_bet
+        - nom_bet
+
+    CreateBetBody:
+      type: object
+      properties:
+        nom_bet:
+          type: string
+        adresse:
+          type: string
+        telephone_fixe:
+          type: integer
+        nom_gerant:
+          type: string
+        prenom_gerant:
+          type: string
+        telephone_bet:
+          type: integer
+      required:
+        - nom_bet
+
+    Unite:
+      type: object
+      properties:
+        id_unite:
+          type: integer
+        nom_unite:
+          type: string
+        id_cmd:
+          type: ["integer", "null"]
+        id_projet:
+          type: ["integer", "null"]
+      required:
+        - id_unite
+        - nom_unite
+
+    CreateUniteBody:
+      type: object
+      properties:
+        nom_unite:
+          type: string
+        id_cmd:
+          type: integer
+        id_projet:
+          type: integer
+      required:
+        - nom_unite
+
+    Historique:
+      type: object
+      properties:
+        id_historique:
+          type: integer
+        action:
+          type: string
+        date_action:
+          type: string
+        id_utilisateur:
+          type: ["integer", "null"]
+        entite_type:
+          type: ["string", "null"]
+        entite_id:
+          type: ["integer", "null"]
+        commentaire:
+          type: ["string", "null"]
+        nom_utilisateur:
+          type: ["string", "null"]
+      required:
+        - id_historique
+        - action
+        - date_action
+
+    TypeDocument:
+      type: object
+      properties:
+        id_type:
+          type: integer
+        lib_type:
+          type: string
+      required:
+        - id_type
+        - lib_type
+
+    CreateTypeBody:
+      type: object
+      properties:
+        lib_type:
+          type: string
+      required:
+        - lib_type
