@@ -14,6 +14,7 @@ import rechercheRouter from "./recherche";
 import historiqueRouter from "./historique";
 import miscRouter from "./misc";
 import dashboardRouter from "./dashboard";
+import tagsRouter from "./tags";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(rechercheRouter);
 router.use(historiqueRouter);
 router.use(miscRouter);
 router.use(dashboardRouter);
+router.use(tagsRouter);
 
 export default router;

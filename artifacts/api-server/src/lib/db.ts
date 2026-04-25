@@ -46,7 +46,7 @@ export const setupSQLite = async () => {
   }
 
   db.run(`CREATE TABLE IF NOT EXISTS departement (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT NOT NULL, code TEXT NOT NULL)`);
+    id INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT NOT NULL, code TEXT)`);
 
   db.run(`CREATE TABLE IF NOT EXISTS utilisateur (
     id INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT NOT NULL, prenom TEXT NOT NULL,
@@ -133,7 +133,18 @@ export const setupSQLite = async () => {
     PRIMARY KEY (id_document, id_tag))`);
 
   db.run(`CREATE TABLE IF NOT EXISTS tag (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, lib_tag TEXT NOT NULL)`);
+    id INTEGER PRIMARY KEY AUTOINCREMENT, lib_tag TEXT NOT NULL, description TEXT)`);
+
+  try {
+    db.run("ALTER TABLE tag ADD COLUMN description TEXT");
+  } catch (e) {
+    // Ignore if column already exists
+  }
+
+  db.run(`CREATE TABLE IF NOT EXISTS projet_tag (
+    id_projet INTEGER REFERENCES projet(id),
+    id_tag INTEGER REFERENCES tag(id),
+    PRIMARY KEY (id_projet, id_tag))`);
 
   sqliteDb = db;
   return db;

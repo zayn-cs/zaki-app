@@ -1,0 +1,38 @@
+
+> @workspace/archivage-app@0.0.0 build
+> vite build --config vite.config.ts
+
+[36mvite v7.3.2 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 19 modules transformed.
+[31m✗[39m Build failed in 3.59s
+[31merror during build:
+[31m[vite:esbuild] Transform failed with 1 error:
+Z:/APPS/zaki-app/artifacts/archivage-app/src/pages/projets.tsx:550:132: ERROR: The character ">" is not valid inside a JSX element[31m
+file: [36mZ:/APPS/zaki-app/artifacts/archivage-app/src/pages/projets.tsx:550:132[31m
+[33m
+[33mThe character ">" is not valid inside a JSX element[33m
+548 |                    </div>
+549 |                  ))}
+550 |  ...oreground italic">Aucun tag défini. Allez dans Paramètres > Tags pour en créer.</p>}
+    |                                                                 ^
+551 |                </div>
+552 |              </div>
+[31m
+    at failureErrorWithLog (Z:\APPS\zaki-app\node_modules\vite\node_modules\esbuild\lib\main.js:1748:15)
+    at Z:\APPS\zaki-app\node_modules\vite\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (Z:\APPS\zaki-app\node_modules\vite\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (Z:\APPS\zaki-app\node_modules\vite\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (Z:\APPS\zaki-app\node_modules\vite\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)[39m
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path Z:\APPS\zaki-app\artifacts\archivage-app
+npm error workspace @workspace/archivage-app@0.0.0
+npm error location Z:\APPS\zaki-app\artifacts\archivage-app
+npm error command failed
+npm error command C:\Windows\system32\cmd.exe /d /s /c vite build --config vite.config.ts

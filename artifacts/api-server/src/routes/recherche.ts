@@ -5,7 +5,7 @@ import { requireAuth } from "../lib/auth";
 const router: IRouter = Router();
 
 router.get("/recherche/projets", requireAuth, async (req, res): Promise<void> => {
-  const { q, stade, priorite, id_tag, date, montant } = req.query;
+  const { q, stade, priorite, id_tag, date, montant, nom_region } = req.query;
   const conditions: string[] = [];
   const params: unknown[] = [];
   let idx = 1;
@@ -23,6 +23,10 @@ router.get("/recherche/projets", requireAuth, async (req, res): Promise<void> =>
     conditions.push(`p.priorite LIKE $${idx++}`);
     params.push(`%${priorite}%`);
   }
+  if (nom_region && nom_region !== "all") {
+    conditions.push(`c.nom_region = $${idx++}`);
+    params.push(nom_region);
+  }
   if (montant) {
     conditions.push(`p.montant_delegue >= $${idx++}`);
     params.push(parseFloat(montant as string));
@@ -39,18 +43,27 @@ router.get("/recherche/projets", requireAuth, async (req, res): Promise<void> =>
     idx++;
   }
   if (id_tag && id_tag !== "all") {
-    conditions.push(`EXISTS (
-      SELECT 1 FROM document d 
-      JOIN document_tag dt ON dt.id_document = d.id 
-      WHERE d.id_projet = p.id AND dt.id_tag = $${idx++}
+    const tagId = parseInt(id_tag as string, 10);
+    conditions.push(`(
+      EXISTS (
+        SELECT 1 FROM document d 
+        JOIN document_tag dt ON dt.id_document = d.id 
+        WHERE d.id_projet = p.id AND dt.id_tag = $${idx}
+      ) OR EXISTS (
+        SELECT 1 FROM projet_tag pt 
+        WHERE pt.id_projet = p.id AND pt.id_tag = $${idx}
+      )
     )`);
-    params.push(parseInt(id_tag as string, 10));
+    params.push(tagId);
+    idx++;
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const result = await query(
-     `SELECT DISTINCT p.*, p.id as id_projet, u.nom_unite, u.id_cmd, ut.nom as nom_chef_projet, b.nom_bet, c.nom_cmd
+     `SELECT DISTINCT p.*, p.id as id_projet, u.nom_unite, u.id_cmd, ut.nom as nom_chef_projet, b.nom_bet, c.nom_cmd, c.nom_region,
+             (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+              FROM tag t JOIN projet_tag pt ON pt.id_tag = t.id WHERE pt.id_projet = p.id) as tags
       FROM projet p
       LEFT JOIN unite u ON u.id = p.id_unite
       LEFT JOIN cmd c ON c.id = u.id_cmd
@@ -61,7 +74,15 @@ router.get("/recherche/projets", requireAuth, async (req, res): Promise<void> =>
       LIMIT 100`,
      params
   );
-  res.json(result.rows);
+  
+  const rows = result.rows.map(row => {
+    if (row.tags && typeof row.tags === 'string') {
+      row.tags = JSON.parse(row.tags);
+    }
+    return row;
+  });
+
+  res.json(rows);
 });
 
 router.get("/recherche/documents", requireAuth, async (req, res): Promise<void> => {

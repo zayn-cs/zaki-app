@@ -12,12 +12,15 @@ import { Search, Loader2, FolderKanban, Files, FileText } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Link } from "wouter";
 
+const REGIONS = ["1° RM", "2° RM", "3° RM", "4° RM", "5° RM", "6° RM"];
+
 export default function RecherchePage() {
   const [tab, setTab] = useState("projets");
   const [q, setQ] = useState("");
   const [stade, setStade] = useState("all");
   const [priorite, setPriorite] = useState("all");
   const [idTag, setIdTag] = useState("all");
+  const [nomRegion, setNomRegion] = useState("all");
   const [date, setDate] = useState("");
   const [montant, setMontant] = useState("");
   const [statut, setStatut] = useState("all");
@@ -60,6 +63,7 @@ export default function RecherchePage() {
         if (stade !== "all") params.set("stade", stade);
         if (priorite !== "all") params.set("priorite", priorite);
         if (idTag !== "all") params.set("id_tag", idTag);
+        if (nomRegion !== "all") params.set("nom_region", nomRegion);
         if (date) params.set("date", date);
         if (montant) params.set("montant", montant);
         if (idUnite !== "all") params.set("id_unite", idUnite);
@@ -127,6 +131,21 @@ export default function RecherchePage() {
                         <SelectItem value="all">Tous les stades</SelectItem>
                         {["en cours", "planification", "archivé", "achevé", "en procédure", "non lancé", "à lancer", "résilié", "à résilier"].map(s => (
                           <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Région</Label>
+                    <Select value={nomRegion} onValueChange={setNomRegion}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Toutes les régions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes les régions</SelectItem>
+                        {REGIONS.map(r => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -231,7 +250,7 @@ export default function RecherchePage() {
                  <Button
                    variant="outline"
                    onClick={() => {
-                     setQ(""); setStade("all"); setPriorite("all"); setIdTag("all"); setDate(""); setMontant(""); setStatut("all"); setIdType("all");
+                     setQ(""); setStade("all"); setPriorite("all"); setIdTag("all"); setNomRegion("all"); setDate(""); setMontant(""); setStatut("all"); setIdType("all");
                      setIdUnite("all"); setIdCmd("all");
                      setResultatsProjets(null); setResultatsDocuments(null);
                    }}
@@ -262,8 +281,9 @@ export default function RecherchePage() {
                          <p className="font-medium">{p.programme as string ?? "—"} <span className="text-xs font-normal text-muted-foreground ml-2">({p.numero as string ?? "N/A"})</span></p>
                          <p className="text-sm text-muted-foreground">
                            {p.pa as string} · {p.numero_op as string} ·
-                           {p.nom_unite ? ` ${p.nom_unite}` : " —"}·
-                           {p.nom_cmd ? ` ${p.nom_cmd}` : ""} ·
+                           {p.nom_unite ? ` ${p.nom_unite}` : " —"} ·
+                           {p.nom_cmd ? ` ${p.nom_cmd}` : ""}
+                           {p.nom_region ? ` (${p.nom_region})` : ""} ·
                            {p.nom_chef_projet as string ?? "—"}
                          </p>
                        </div>
@@ -288,7 +308,14 @@ export default function RecherchePage() {
                           }`}>
                             {p.stade as string ?? "—"}
                           </Badge>
-                          <span className="text-sm font-medium">{formatCurrency(p.montant_delegue as number)}</span>
+                          <div className="flex flex-wrap gap-1 ml-2">
+                            {(p.tags as any[])?.map((t: any) => (
+                              <Badge key={t.id} variant="outline" className="text-[10px] bg-indigo-50 text-indigo-600 border-indigo-200">
+                                {t.lib_tag}
+                              </Badge>
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium ml-2">{formatCurrency(p.montant_delegue as number)}</span>
                         </div>
                     </div>
                   </div>

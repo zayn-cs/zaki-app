@@ -6,21 +6,21 @@ const router: IRouter = Router();
 
 router.get("/departements", requireAuth, async (req, res): Promise<void> => {
   const result = await query(
-    `SELECT id, nom FROM departement ORDER BY nom`
+    `SELECT id, nom, code FROM departement ORDER BY nom`
   );
   res.json(result.rows);
 });
 
 router.post("/departements", requireAuth, requireRole(...ADMIN_ROLES), async (req, res): Promise<void> => {
-  const { nom } = req.body;
+  const { nom, code } = req.body;
   if (!nom) {
     res.status(400).json({ error: "Nom requis" });
     return;
   }
 
   const result = await query(
-    `INSERT INTO departement (nom) VALUES ($1) RETURNING id, nom`,
-    [nom]
+    `INSERT INTO departement (nom, code) VALUES ($1, $2) RETURNING id, nom, code`,
+    [nom, code || ""]
   );
 
   await logHistorique(
@@ -40,7 +40,7 @@ router.get("/departements/:id", requireAuth, async (req, res): Promise<void> => 
   const id = parseInt(rawId, 10);
 
   const result = await query(
-    `SELECT id, nom FROM departement WHERE id = $1`,
+    `SELECT id, nom, code FROM departement WHERE id = $1`,
     [id]
   );
 
@@ -55,7 +55,7 @@ router.get("/departements/:id", requireAuth, async (req, res): Promise<void> => 
 router.patch("/departements/:id", requireAuth, requireRole(...ADMIN_ROLES), async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
-  const { nom } = req.body;
+  const { nom, code } = req.body;
 
   if (!nom) {
     res.status(400).json({ error: "Nom requis" });
@@ -63,8 +63,8 @@ router.patch("/departements/:id", requireAuth, requireRole(...ADMIN_ROLES), asyn
   }
 
   const result = await query(
-    `UPDATE departement SET nom = $1 WHERE id = $2 RETURNING id, nom`,
-    [nom, id]
+    `UPDATE departement SET nom = $1, code = $2 WHERE id = $3 RETURNING id, nom, code`,
+    [nom, code || "", id]
   );
 
   if (result.rows.length === 0) {

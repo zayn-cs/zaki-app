@@ -21,6 +21,8 @@ import { Plus, Pencil, Trash2, Search, Eye, Loader2, FolderKanban, Sparkles, Fil
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Link } from "wouter";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tag as TagIcon } from "lucide-react";
 
 const STADES = ["en cours", "planification", "archivé", "achevé", "en procédure", "non lancé", "à lancer", "résilié", "à résilier"];
 const PRIORITES = ["haute", "moyenne", "basse"];
@@ -56,6 +58,7 @@ interface Projet {
   id_unite?: number;
   id_bet?: number;
   chef_projet?: number;
+  tags?: { id: number; lib_tag: string }[];
 }
 
 function StadeBadge({ stade }: { stade?: string }) {
@@ -104,6 +107,7 @@ interface ProjetFormData {
   reference_priorite: string;
   date_achevement: string;
   chef_projet: string;
+  ids_tags: number[];
 }
 
 const EMPTY_FORM: ProjetFormData = {
@@ -111,6 +115,7 @@ const EMPTY_FORM: ProjetFormData = {
   programme: "", programme_a_realiser: "", stade: "en cours", situation_objectif: "", contrainte: "", codification_cc: "",
   id_bet: "", delais: "0", debut_etude: "", fin_etude: "", essais: "", fin_prev: "",
   observation: "", interne: "", priorite: "moyenne", type: "", reference_priorite: "", date_achevement: "", chef_projet: "",
+  ids_tags: [],
 };
 
 export default function ProjetsPage() {
@@ -141,6 +146,11 @@ export default function ProjetsPage() {
   const { data: users = [] } = useQuery<any[]>({
     queryKey: ["users"],
     queryFn: () => fetch(apiUrl("/users"), { credentials: "include" }).then(r => r.json()),
+  });
+  
+  const { data: tags = [] } = useQuery<any[]>({
+    queryKey: ["tags"],
+    queryFn: () => fetch(apiUrl("/tags"), { credentials: "include" }).then(r => r.json()),
   });
 
   const filtered = projets.filter(p =>
@@ -185,6 +195,7 @@ export default function ProjetsPage() {
       reference_priorite: p.reference_priorite ?? "",
       date_achevement: p.date_achevement ? p.date_achevement.substring(0, 16) : "",
       chef_projet: p.chef_projet?.toString() ?? "",
+      ids_tags: p.tags?.map(t => t.id) ?? [],
     });
     setDialogOpen(true);
   };
@@ -301,8 +312,15 @@ export default function ProjetsPage() {
               ) : (
                 filtered.map((p) => (
                   <TableRow key={p.id_projet} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="font-semibold text-slate-900 max-w-xs truncate">
-                      {p.programme}
+                    <TableCell className="font-semibold text-slate-900 max-w-xs">
+                      <div className="truncate">{p.programme}</div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {p.tags?.map(t => (
+                          <Badge key={t.id} variant="outline" className="text-[9px] py-0 px-1 bg-indigo-50 text-indigo-600 border-indigo-200">
+                            {t.lib_tag}
+                          </Badge>
+                        ))}
+                      </div>
                       {p.pa && <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-normal mt-1">PA: {p.pa}</div>}
                     </TableCell>
                     <TableCell>
@@ -505,6 +523,33 @@ export default function ProjetsPage() {
               <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Date achèvement réelle</Label>
               <Input type="datetime-local" value={form.date_achevement} onChange={e => setForm(f => ({ ...f, date_achevement: e.target.value }))} className="border-slate-300" />
             </div>
+            
+            <div className="md:col-span-3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <h3 className="font-bold text-slate-700 text-sm flex items-center gap-2">
+                <TagIcon className="h-4 w-4" /> Étiquettes / Tags
+              </h3>
+              <div className="flex flex-wrap gap-4">
+                {tags.map(t => (
+                  <div key={t.id} className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
+                    <Checkbox 
+                      id={`tag-${t.id}`} 
+                      checked={form.ids_tags.includes(t.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setForm(f => ({ ...f, ids_tags: [...f.ids_tags, t.id] }));
+                        } else {
+                          setForm(f => ({ ...f, ids_tags: f.ids_tags.filter(id => id !== t.id) }));
+                        }
+                      }}
+                    />
+                    <label htmlFor={`tag-${t.id}`} className="text-sm font-medium leading-none cursor-pointer">
+                      {t.lib_tag}
+                    </label>
+                  </div>
+                ))}
+                {tags.length === 0 && <p className="text-xs text-muted-foreground italic">Aucun tag défini. Allez dans Paramètres &gt; Tags pour en créer.</p>}
+              </div>
+            </div>
           </div>
 
           <DialogFooter className="bg-slate-50 -mx-6 -mb-6 p-6 mt-6 border-t rounded-b-lg">
@@ -536,6 +581,18 @@ export default function ProjetsPage() {
                    <div><Label className="text-slate-400 block mb-1">PA / Operation</Label> <span className="font-medium">{detailProjet.pa} / {detailProjet.numero_op ?? "—"}</span></div>
                    <div><Label className="text-slate-400 block mb-1">Unité</Label> <span className="font-medium">{detailProjet.nom_unite ?? "—"}</span></div>
                    <div><Label className="text-slate-400 block mb-1">BET</Label> <span className="font-medium font-bold text-blue-700">{detailProjet.nom_bet ?? "—"}</span></div>
+                   <div className="lg:col-span-3">
+                     <Label className="text-slate-400 block mb-1">Étiquettes / Tags</Label>
+                     <div className="flex flex-wrap gap-2 mt-1">
+                       {detailProjet.tags?.map(t => (
+                         <Badge key={t.id} variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
+                           <TagIcon className="h-3 w-3 mr-1" />
+                           {t.lib_tag}
+                         </Badge>
+                       ))}
+                       {(detailProjet.tags?.length === 0 || !detailProjet.tags) && <span className="text-muted-foreground italic text-xs">Aucun tag</span>}
+                     </div>
+                   </div>
                 </div>
               </section>
 

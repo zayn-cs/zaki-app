@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -11,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Loader2, Building2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-interface Departement { id: number; nom: string; }
+interface Departement { id: number; nom: string; code?: string; }
 
 export default function DepartementsPage() {
   const { toast } = useToast();
@@ -20,6 +21,7 @@ export default function DepartementsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDept, setEditDept] = useState<Departement | null>(null);
   const [nom, setNom] = useState("");
+  const [code, setCode] = useState("");
   const [saving, setSaving] = useState(false);
 
   const { data: departements = [], isLoading } = useQuery<Departement[]>({
@@ -28,11 +30,13 @@ export default function DepartementsPage() {
   });
 
   const filtered = departements.filter(d =>
-    !search || d.nom?.toLowerCase().includes(search.toLowerCase())
+    !search || 
+    d.nom?.toLowerCase().includes(search.toLowerCase()) ||
+    d.code?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openCreate = () => { setEditDept(null); setNom(""); setDialogOpen(true); };
-  const openEdit = (d: Departement) => { setEditDept(d); setNom(d.nom); setDialogOpen(true); };
+  const openCreate = () => { setEditDept(null); setNom(""); setCode(""); setDialogOpen(true); };
+  const openEdit = (d: Departement) => { setEditDept(d); setNom(d.nom); setCode(d.code || ""); setDialogOpen(true); };
 
   const handleSave = useCallback(async () => {
     if (!nom.trim()) return;
@@ -43,7 +47,7 @@ export default function DepartementsPage() {
       const res = await fetch(url, {
         method, credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nom }),
+        body: JSON.stringify({ nom, code }),
       });
       if (!res.ok) throw new Error("Erreur lors de la sauvegarde");
       await queryClient.invalidateQueries({ queryKey: ["departements"] });
@@ -54,7 +58,7 @@ export default function DepartementsPage() {
     } finally {
       setSaving(false);
     }
-  }, [nom, editDept, queryClient, toast]);
+  }, [nom, code, editDept, queryClient, toast]);
 
   const handleDelete = async (d: Departement) => {
     if (!confirm(`Supprimer le département "${d.nom}" ?`)) return;
@@ -99,14 +103,15 @@ export default function DepartementsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nom du département</TableHead>
+              <TableHead>Code</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={2} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={2} className="text-center py-8 text-muted-foreground">Aucun département trouvé</TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Aucun département trouvé</TableCell></TableRow>
             ) : filtered.map(d => (
               <TableRow key={d.id} data-testid={`row-dept-${d.id}`}>
                 <TableCell>
@@ -114,6 +119,9 @@ export default function DepartementsPage() {
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{d.nom}</span>
                   </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{d.code || "—"}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
@@ -132,15 +140,26 @@ export default function DepartementsPage() {
           <DialogHeader>
             <DialogTitle>{editDept ? "Modifier le département" : "Nouveau département"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label>Nom *</Label>
-            <Input
-              data-testid="input-nom-dept"
-              value={nom}
-              onChange={e => setNom(e.target.value)}
-              placeholder="Nom du département"
-              onKeyDown={e => e.key === "Enter" && void handleSave()}
-            />
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nom *</Label>
+              <Input
+                data-testid="input-nom-dept"
+                value={nom}
+                onChange={e => setNom(e.target.value)}
+                placeholder="Nom du département"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Code</Label>
+              <Input
+                data-testid="input-code-dept"
+                value={code}
+                onChange={e => setCode(e.target.value)}
+                placeholder="ex: DT, EXP..."
+                onKeyDown={e => e.key === "Enter" && void handleSave()}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>

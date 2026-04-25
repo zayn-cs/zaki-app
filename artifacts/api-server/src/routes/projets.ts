@@ -35,7 +35,9 @@ router.get("/projets", requireAuth, async (req, res): Promise<void> => {
             p.observation, p.interne, p.priorite, p.type, 
             p.reference_priorite, p.date_achevement, p.chef_projet,
             b.nom_bet, u.nom_unite,
-            CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet
+            CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet,
+            (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+             FROM tag t JOIN projet_tag pt ON pt.id_tag = t.id WHERE pt.id_projet = p.id) as tags
      FROM projet p
      LEFT JOIN bet b ON b.id = p.id_bet
      LEFT JOIN unite u ON u.id = p.id_unite
@@ -45,7 +47,15 @@ router.get("/projets", requireAuth, async (req, res): Promise<void> => {
      ORDER BY p.id DESC`,
     params
   );
-  res.json(result.rows);
+  
+  const rows = result.rows.map(row => {
+    if (row.tags && typeof row.tags === 'string') {
+      row.tags = JSON.parse(row.tags);
+    }
+    return row;
+  });
+  
+  res.json(rows);
 });
 
 router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, res): Promise<void> => {
@@ -54,7 +64,7 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
       numero, id_unite, pa, numero_op, montant_delegue, montant_engagement, montant_paiement,
       programme, programme_a_realiser, stade, situation_objectif, contrainte, codification_cc, 
       id_bet, delais, debut_etude, fin_etude, essais, fin_prev, observation, interne, 
-      priorite, type, reference_priorite, date_achevement, chef_projet
+      priorite, type, reference_priorite, date_achevement, chef_projet, ids_tags
     } = req.body;
 
     if (!programme) {
@@ -83,6 +93,13 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
 
     const newId = result.rows[0].id_projet as number;
 
+    // Handle tags
+    if (Array.isArray(ids_tags)) {
+      for (const tagId of ids_tags) {
+        await query(`INSERT INTO projet_tag (id_projet, id_tag) VALUES ($1, $2)`, [newId, tagId]);
+      }
+    }
+
     await logHistorique(
       query as Parameters<typeof logHistorique>[0],
       "CREATION",
@@ -99,7 +116,9 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
               p.id_bet, p.delais, p.debut_etude, p.fin_etude, p.fin_prev,
               p.observation, p.priorite, p.type, p.date_achevement, p.chef_projet,
               b.nom_bet, u.nom_unite,
-              COALESCE(usr.prenom, '') || ' ' || COALESCE(usr.nom, '') as nom_chef_projet
+              COALESCE(usr.prenom, '') || ' ' || COALESCE(usr.nom, '') as nom_chef_projet,
+              (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+               FROM tag t JOIN projet_tag pt ON pt.id_tag = t.id WHERE pt.id_projet = p.id) as tags
        FROM projet p
        LEFT JOIN bet b ON b.id = p.id_bet
        LEFT JOIN unite u ON u.id = p.id_unite
@@ -107,7 +126,13 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
        WHERE p.id = $1`,
       [newId]
     );
-    res.status(201).json(full.rows[0]);
+    
+    const projet = full.rows[0];
+    if (projet.tags && typeof projet.tags === 'string') {
+      projet.tags = JSON.parse(projet.tags);
+    }
+    
+    res.status(201).json(projet);
   } catch (error) {
     console.error("Erreur creation projet:", error);
     res.status(500).json({ error: "Erreur lors de la création du projet" });
@@ -125,7 +150,9 @@ router.get("/projets/:id", requireAuth, async (req, res): Promise<void> => {
             p.id_bet, p.delais, p.debut_etude, p.fin_etude, p.fin_prev,
             p.observation, p.priorite, p.type, p.date_achevement, p.chef_projet,
             b.nom_bet, u.nom_unite,
-            CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet
+            CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet,
+            (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+             FROM tag t JOIN projet_tag pt ON pt.id_tag = t.id WHERE pt.id_projet = p.id) as tags
      FROM projet p
      LEFT JOIN bet b ON b.id = p.id_bet
      LEFT JOIN unite u ON u.id = p.id_unite
@@ -138,7 +165,13 @@ router.get("/projets/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Projet non trouvé" });
     return;
   }
-  res.json(result.rows[0]);
+  
+  const projet = result.rows[0];
+  if (projet.tags && typeof projet.tags === 'string') {
+    projet.tags = JSON.parse(projet.tags);
+  }
+  
+  res.json(projet);
 });
 
 router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (req, res): Promise<void> => {
@@ -149,7 +182,7 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
     numero, id_unite, pa, numero_op, montant_delegue, montant_engagement, montant_paiement,
     programme, programme_a_realiser, stade, situation_objectif, contrainte, codification_cc, 
     id_bet, delais, debut_etude, fin_etude, essais, fin_prev, observation, interne, 
-    priorite, type, reference_priorite, date_achevement, chef_projet
+    priorite, type, reference_priorite, date_achevement, chef_projet, ids_tags
   } = req.body;
 
   const updated = await query(
@@ -192,6 +225,14 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
     return;
   }
 
+  // Handle tags update
+  if (Array.isArray(ids_tags)) {
+    await query(`DELETE FROM projet_tag WHERE id_projet = $1`, [id]);
+    for (const tagId of ids_tags) {
+      await query(`INSERT INTO projet_tag (id_projet, id_tag) VALUES ($1, $2)`, [id, tagId]);
+    }
+  }
+
   await logHistorique(
     query as Parameters<typeof logHistorique>[0],
     "MODIFICATION",
@@ -208,7 +249,9 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
             p.id_bet, p.delais, p.debut_etude, p.fin_etude, p.fin_prev,
             p.observation, p.priorite, p.type, p.date_achevement, p.chef_projet,
             b.nom_bet, u.nom_unite,
-            CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet
+            CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet,
+            (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+             FROM tag t JOIN projet_tag pt ON pt.id_tag = t.id WHERE pt.id_projet = p.id) as tags
      FROM projet p
      LEFT JOIN bet b ON b.id = p.id_bet
      LEFT JOIN unite u ON u.id = p.id_unite
@@ -216,7 +259,13 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
      WHERE p.id = $1`,
     [id]
   );
-  res.json(result.rows[0]);
+  
+  const projet = result.rows[0];
+  if (projet.tags && typeof projet.tags === 'string') {
+    projet.tags = JSON.parse(projet.tags);
+  }
+  
+  res.json(projet);
 });
 
 router.post("/lots", requireAuth, requireRole(...PROJECT_ROLES), async (req, res): Promise<void> => {

@@ -102,6 +102,7 @@ async function buildAll() {
       "playwright",
       "puppeteer",
       "puppeteer-core",
+      "pg-cloudflare",
       "electron",
     ],
     sourcemap: "linked",

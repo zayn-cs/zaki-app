@@ -17,8 +17,9 @@
     "typecheck": "npm run typecheck:libs && npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
-    "typescript": "~5.9.2",
+    "@rollup/rollup-win32-x64-msvc": "^4.60.2",
+    "concurrently": "^9.1.2",
     "prettier": "^3.8.1",
-    "concurrently": "^9.1.2"
+    "typescript": "~5.9.2"
   }
 }
