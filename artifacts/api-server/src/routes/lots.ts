@@ -118,8 +118,11 @@ router.patch("/lots/:id", requireAuth, requireRole(...PROJECT_ROLES), async (req
   );
 
   if (updated.rowCount === 0) {
-    res.status(404).json({ error: "Lot non trouvé" });
-    return;
+    const check = await query(`SELECT id FROM lot WHERE id = $1`, [id]);
+    if (check.rows.length === 0) {
+      res.status(404).json({ error: "Lot non trouvé" });
+      return;
+    }
   }
 
   await logHistorique(

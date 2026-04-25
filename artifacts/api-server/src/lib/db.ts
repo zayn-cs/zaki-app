@@ -173,11 +173,14 @@ export const query = async (text: string, params: any[] = []) => {
   // Convert ILIKE to LIKE for SQLite
   sqliteSql = sqliteSql.replace(/ILIKE/gi, "LIKE");
   
+  // Convert undefined to null
+  const safeParams = params.map(p => p === undefined ? null : p);
+  
   if (text.trim().toUpperCase().startsWith("SELECT") || text.includes("RETURNING")) {
     const stmt = sqliteDb.prepare(sqliteSql);
     const rows: any[] = [];
-    if (params && params.length > 0) {
-      stmt.bind(params);
+    if (safeParams && safeParams.length > 0) {
+      stmt.bind(safeParams);
     }
     while (stmt.step()) {
       rows.push(stmt.getAsObject());
@@ -185,7 +188,7 @@ export const query = async (text: string, params: any[] = []) => {
     stmt.free();
     return { rows, rowCount: rows.length };
   } else {
-    sqliteDb.run(sqliteSql, params);
+    sqliteDb.run(sqliteSql, safeParams);
     // Persist changes to disk
     await saveSQLite();
     return { 

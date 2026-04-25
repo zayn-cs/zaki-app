@@ -45,7 +45,7 @@ interface Version {
 interface Projet { id_projet: number; programme?: string; }
 interface TypeDoc { id: number; lib_type: string; allowed_formats?: string | null; }
 interface Phase { id_phase: number; nome_phase: string; id_lot?: number; }
-interface Utilisateur { id: number; nom: string; prenom: string; }
+interface Utilisateur { id: number; nom: string; prenom: string; role?: string; }
 
 const STATUT_COLORS: Record<string, string> = {
   actif: "bg-green-100 text-green-700",
@@ -414,7 +414,7 @@ export default function DocumentsPage() {
               <Select value={form.id_utilisateur} onValueChange={v => setForm(f => ({ ...f, id_utilisateur: v }))}>
                 <SelectTrigger><SelectValue placeholder="Choisir un responsable" /></SelectTrigger>
                 <SelectContent>
-                  {utilisateurs.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.prenom} {u.nom}</SelectItem>)}
+                  {utilisateurs.filter(u => u.role === "responsable_lot").map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.prenom} {u.nom}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

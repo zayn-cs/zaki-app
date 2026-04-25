@@ -197,8 +197,11 @@ router.patch("/utilisateurs/:id", requireAuth, async (req, res): Promise<void> =
   );
 
   if (updated.rowCount === 0) {
-    res.status(404).json({ error: "Utilisateur non trouvé" });
-    return;
+    const check = await query(`SELECT id FROM utilisateur WHERE id = $1`, [id]);
+    if (check.rows.length === 0) {
+      res.status(404).json({ error: "Utilisateur non trouvé" });
+      return;
+    }
   }
 
   await logHistorique(

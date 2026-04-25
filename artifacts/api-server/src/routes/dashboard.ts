@@ -103,7 +103,40 @@ router.get("/dashboard/histogrammes", requireAuth, async (req, res): Promise<voi
 });
 
 router.get("/dashboard/analyse", requireAuth, async (req, res): Promise<void> => {
-  res.json({ status: "ok" }); 
+  try {
+    const projetsRegion = await query(`
+      SELECT COALESCE(c.nom_region, 'Non spécifié') as label, COUNT(p.id) as total
+      FROM projet p
+      LEFT JOIN unite u ON p.id_unite = u.id
+      LEFT JOIN cmd c ON u.id_cmd = c.id
+      GROUP BY c.nom_region
+    `);
+
+    const lotsRegion = await query(`
+      SELECT COALESCE(c.nom_region, 'Non spécifié') as label, COUNT(l.id) as total
+      FROM lot l
+      LEFT JOIN projet p ON l.id_projet = p.id
+      LEFT JOIN unite u ON p.id_unite = u.id
+      LEFT JOIN cmd c ON u.id_cmd = c.id
+      GROUP BY c.nom_region
+    `);
+
+    const docsProjet = await query(`
+      SELECT COALESCE(p.programme, 'Sans projet') as label, COUNT(d.id) as total
+      FROM document d
+      LEFT JOIN projet p ON d.id_projet = p.id
+      GROUP BY p.programme
+    `);
+
+    res.json({
+      projetsParRegion: projetsRegion.rows.map(r => ({ label: r.label, total: Number(r.total) })),
+      lotsParRegion: lotsRegion.rows.map(r => ({ label: r.label, total: Number(r.total) })),
+      documentsParProjet: docsProjet.rows.map(r => ({ label: r.label, total: Number(r.total) }))
+    });
+  } catch (error) {
+    console.error("Analysis error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 export default router;

@@ -32,7 +32,7 @@ export default function LotsPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editLot, setEditLot] = useState<Lot | null>(null);
-  const [form, setForm] = useState({ nom_lot: "", id_departement: "", id_user: "" });
+  const [form, setForm] = useState({ nom_lot: "", id_departement: "" });
   const [saving, setSaving] = useState(false);
 
   const { data: lots = [], isLoading } = useQuery<Lot[]>({
@@ -67,7 +67,10 @@ export default function LotsPage() {
 
   const openEdit = (l: Lot) => {
     setEditLot(l);
-    setForm({`n      nom_lot: l.nom_lot,`n      id_departement: l.id_departement?.toString() ?? "",`n      id_user: l.id_user?.toString() ?? "",`n    });
+    setForm({
+      nom_lot: l.nom_lot,
+      id_departement: l.id_departement?.toString() ?? "",
+    });
     setDialogOpen(true);
   };
 
@@ -75,7 +78,9 @@ export default function LotsPage() {
     if (!form.nom_lot) return;
     setSaving(true);
     try {
-      const body = {\n        nom_lot: form.nom_lot,\n        id_departement: form.id_departement ? parseInt(form.id_departement) : null,\n        id_user: form.id_user ? parseInt(form.id_user) : null,
+      const body = {
+        nom_lot: form.nom_lot,
+        id_departement: form.id_departement ? parseInt(form.id_departement) : null,
       };
 
       const url = editLot ? apiUrl(`/lots/${editLot.id_lot}`) : apiUrl("/lots");
@@ -203,7 +208,3 @@ export default function LotsPage() {
     </div>
   );
 }
-
-
-
-

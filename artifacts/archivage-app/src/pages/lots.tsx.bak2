@@ -67,7 +67,10 @@ export default function LotsPage() {
 
   const openEdit = (l: Lot) => {
     setEditLot(l);
-    setForm({`n      nom_lot: l.nom_lot,`n      id_departement: l.id_departement?.toString() ?? "",`n      id_user: l.id_user?.toString() ?? "",`n    });
+    setForm({
+      nom_lot: l.nom_lot,
+      id_departement: l.id_departement?.toString() ?? "",
+    });
     setDialogOpen(true);
   };
 
