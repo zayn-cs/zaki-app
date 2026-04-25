@@ -233,7 +233,26 @@ export default function ProjetsPage() {
         throw new Error(errData.error || "Erreur lors de la sauvegarde");
       }
 
+      const updatedProjet = await res.json();
+
+      // Optimistically update the projets cache for immediate UI feedback
+      if (editProjet) {
+        queryClient.setQueryData<Projet[]>(["projets"], (old) => {
+          if (!old) return [updatedProjet];
+          return old.map((p) =>
+            p.id_projet === updatedProjet.id_projet ? updatedProjet : p
+          );
+        });
+      } else {
+        queryClient.setQueryData<Projet[]>(["projets"], (old) => {
+          if (!old) return [updatedProjet];
+          return [updatedProjet, ...old];
+        });
+      }
+
+      // Also invalidate to ensure fresh data from server
       await queryClient.invalidateQueries({ queryKey: ["projets"] });
+
       setDialogOpen(false);
       toast({ title: editProjet ? "Projet modifié" : "Projet créé", description: form.programme });
     } catch (err) {

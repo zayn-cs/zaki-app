@@ -32,7 +32,7 @@ export default function LotsPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editLot, setEditLot] = useState<Lot | null>(null);
-  const [form, setForm] = useState({ nom_lot: "", id_departement: "" });
+   const [form, setForm] = useState({ nom_lot: "", id_projet: "", id_departement: "" });
   const [saving, setSaving] = useState(false);
 
   const { data: lots = [], isLoading } = useQuery<Lot[]>({
@@ -61,7 +61,7 @@ export default function LotsPage() {
 
   const openCreate = () => {
     setEditLot(null);
-    setForm({ nom_lot: "", id_departement: "" });
+    setForm({ nom_lot: "", id_projet: "", id_departement: "" });
     setDialogOpen(true);
   };
 
@@ -69,6 +69,7 @@ export default function LotsPage() {
     setEditLot(l);
     setForm({
       nom_lot: l.nom_lot,
+      id_projet: l.id_projet?.toString() ?? "",
       id_departement: l.id_departement?.toString() ?? "",
     });
     setDialogOpen(true);
@@ -80,6 +81,7 @@ export default function LotsPage() {
     try {
       const body = {
         nom_lot: form.nom_lot,
+        id_projet: form.id_projet ? parseInt(form.id_projet) : null,
         id_departement: form.id_departement ? parseInt(form.id_departement) : null,
       };
 
@@ -94,7 +96,21 @@ export default function LotsPage() {
 
       if (!res.ok) throw new Error("Erreur lors de la sauvegarde");
 
-      await queryClient.invalidateQueries({ queryKey: ["lots"] });
+      const updatedLot = await res.json();
+
+      // Optimistically update the lots cache
+      if (editLot) {
+        queryClient.setQueryData<Lot[]>(["lots"], (old) => {
+          if (!old) return [updatedLot];
+          return old.map((l) => (l.id_lot === updatedLot.id_lot ? updatedLot : l));
+        });
+      } else {
+        queryClient.setQueryData<Lot[]>(["lots"], (old) => {
+          if (!old) return [updatedLot];
+          return [updatedLot, ...old];
+        });
+      }
+
       setDialogOpen(false);
       toast({ title: editLot ? "Lot modifié" : "Lot créé", description: form.nom_lot });
     } catch (err) {
@@ -181,21 +197,30 @@ export default function LotsPage() {
           <DialogHeader>
             <DialogTitle>{editLot ? "Modifier le lot" : "Nouveau lot"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nom du lot *</Label>
-              <Input data-testid="input-nom-lot" value={form.nom_lot} onChange={e => setForm(f => ({ ...f, nom_lot: e.target.value }))} placeholder="Nom du lot" />
-            </div>
-            <div className="space-y-2">
-              <Label>Département</Label>
-              <Select value={form.id_departement} onValueChange={v => setForm(f => ({ ...f, id_departement: v }))}>
-                <SelectTrigger><SelectValue placeholder="Choisir un département" /></SelectTrigger>
-                <SelectContent>
-                  {departements.map(d => <SelectItem key={d.id} value={d.id.toString()}>{d.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+           <div className="space-y-4">
+             <div className="space-y-2">
+               <Label>Nom du lot *</Label>
+               <Input data-testid="input-nom-lot" value={form.nom_lot} onChange={e => setForm(f => ({ ...f, nom_lot: e.target.value }))} placeholder="Nom du lot" />
+             </div>
+             <div className="space-y-2">
+               <Label>Projet</Label>
+               <Select value={form.id_projet} onValueChange={v => setForm(f => ({ ...f, id_projet: v }))}>
+                 <SelectTrigger><SelectValue placeholder="Choisir un projet" /></SelectTrigger>
+                 <SelectContent>
+                   {projets.map(p => <SelectItem key={p.id_projet} value={p.id_projet.toString()}>{p.programme}</SelectItem>)}
+                 </SelectContent>
+               </Select>
+             </div>
+             <div className="space-y-2">
+               <Label>Département</Label>
+               <Select value={form.id_departement} onValueChange={v => setForm(f => ({ ...f, id_departement: v }))}>
+                 <SelectTrigger><SelectValue placeholder="Choisir un département" /></SelectTrigger>
+                 <SelectContent>
+                   {departements.map(d => <SelectItem key={d.id} value={d.id.toString()}>{d.nom}</SelectItem>)}
+                 </SelectContent>
+               </Select>
+             </div>
+           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
             <Button onClick={() => void handleSave()} disabled={saving || !form.nom_lot} data-testid="button-save-lot">

@@ -178,6 +178,14 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
 
+  // Check project exists first (avoids relying on rowCount which is unreliable in sql.js
+  // when COALESCE keeps existing values and no rows are actually modified)
+  const exists = await query(`SELECT id FROM projet WHERE id = $1`, [id]);
+  if (exists.rows.length === 0) {
+    res.status(404).json({ error: "Projet non trouvé" });
+    return;
+  }
+
   const {
     numero, id_unite, pa, numero_op, montant_delegue, montant_engagement, montant_paiement,
     programme, programme_a_realiser, stade, situation_objectif, contrainte, codification_cc, 
@@ -185,7 +193,7 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
     priorite, type, reference_priorite, date_achevement, chef_projet, ids_tags
   } = req.body;
 
-  const updated = await query(
+  await query(
     `UPDATE projet SET
       numero = COALESCE($1, numero),
       id_unite = COALESCE($2, id_unite),
@@ -219,11 +227,6 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
      id_bet, delais, debut_etude, fin_etude, essais, fin_prev, observation, interne,
      priorite, type, reference_priorite, date_achevement, chef_projet, id]
   );
-
-  if (updated.rowCount === 0) {
-    res.status(404).json({ error: "Projet non trouvé" });
-    return;
-  }
 
   // Handle tags update
   if (Array.isArray(ids_tags)) {
