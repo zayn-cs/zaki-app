@@ -33,11 +33,18 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   const storedPassword = user.mot_pass as string;
 
-  if (!storedPassword.startsWith("$2")) {
-    res.status(401).json({ error: "Identifiant ou mot de passe incorrect" });
-    return;
+  if (storedPassword.startsWith("$2")) {
+    // Bcrypt hash — normal comparison
+    passwordMatch = await bcrypt.compare(mot_pass, storedPassword);
+  } else {
+    // Plain-text password (e.g. created directly via pgAdmin)
+    passwordMatch = mot_pass === storedPassword;
+    if (passwordMatch) {
+      // Transparently upgrade to bcrypt so future logins use the hash
+      const hashed = await bcrypt.hash(mot_pass, 10);
+      await query(`UPDATE utilisateur SET mot_pass = $1 WHERE id = $2`, [hashed, user.id]);
+    }
   }
-  passwordMatch = await bcrypt.compare(mot_pass, storedPassword);
 
   if (!passwordMatch) {
     res.status(401).json({ error: "Identifiant ou mot de passe incorrect" });
