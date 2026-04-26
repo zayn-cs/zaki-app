@@ -87,8 +87,8 @@ router.post("/utilisateurs", requireAuth, requireRole("admin", "coordinateur"), 
     telephone_personnel, is_chef_project, id_departement
   } = req.body;
 
-  if (!nom || !prenom || !messager || !mot_pass) {
-    res.status(400).json({ error: "nom, prenom, messager et mot_pass sont requis" });
+  if (!messager || !mot_pass) {
+    res.status(400).json({ error: "messager et mot_pass sont requis" });
     return;
   }
 
@@ -119,7 +119,7 @@ router.post("/utilisateurs", requireAuth, requireRole("admin", "coordinateur"), 
     req.session.user?.id ?? null,
     "utilisateur",
     newId,
-    `Création de l'utilisateur: ${prenom} ${nom}`
+    `Création de l'utilisateur: ${prenom || ""} ${nom || ""}`.trim() || `Création de l'utilisateur: ${messager}`
   );
 
   res.status(201).json(result.rows[0]);

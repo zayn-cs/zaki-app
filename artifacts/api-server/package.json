@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
    "scripts": {
-    "dev": "node ./build.mjs && node --enable-source-maps ./dist/index.mjs",
+    "dev": "node ./build.mjs && node --env-file=.env --enable-source-maps ./dist/index.mjs",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps ./dist/index.mjs",
+    "start": "node --env-file=.env --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "seed": "npm run build && node --enable-source-maps ./dist/run-seed.mjs",
+    "seed": "npm run build && node --env-file=.env --enable-source-maps ./dist/run-seed.mjs",
     "seed:clean": "npm run seed"
   },
   "dependencies": {

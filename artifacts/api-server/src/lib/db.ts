@@ -153,7 +153,21 @@ export const setupSQLite = async () => {
 export const initSchema = async () => {
   if (process.env.DATABASE_URL) {
     pgPool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-    return;
+    
+    // Initialize schema for PostgreSQL
+    try {
+      const migrationPath = path.resolve(process.cwd(), "migrations", "001_initial_schema.sql");
+      if (fs.existsSync(migrationPath)) {
+        console.log("🐘 Initializing PostgreSQL schema...");
+        const sql = fs.readFileSync(migrationPath, "utf8");
+        await pgPool.query(sql);
+        console.log("✅ PostgreSQL schema initialized.");
+      }
+    } catch (err) {
+      console.error("❌ Failed to initialize PostgreSQL schema:", err);
+    }
+    
+    return pgPool;
   }
   return await setupSQLite();
 };

@@ -24,11 +24,11 @@ CREATE TABLE IF NOT EXISTS departement (
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS utilisateur (
     id                       SERIAL PRIMARY KEY,
-    nom                      TEXT NOT NULL,
-    prenom                   TEXT NOT NULL,
+    nom                      TEXT,
+    prenom                   TEXT,
     messager                 TEXT NOT NULL UNIQUE,          -- identifiant de connexion
     mot_pass                 TEXT NOT NULL,                 -- hash bcrypt
-    role                     TEXT NOT NULL
+    role                     TEXT DEFAULT 'chef_projet'
                                  CHECK (role IN (
                                      'admin', 'coordinateur',
                                      'chef_departement', 'chef_projet',

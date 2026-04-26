@@ -1,8 +1,8 @@
 import { type DatabaseType, query } from "./db";
 
 export const seedDatabase = async (db: DatabaseType) => {
-  // Check if already seeded
-  const check = await query("SELECT COUNT(*) as count FROM utilisateur");
+  // Check if already seeded (check for projects instead of users, as migration might create admin)
+  const check = await query("SELECT COUNT(*) as count FROM projet");
   if (Number(check.rows[0]?.count || 0) > 0) {
     console.log("⏩ Database already seeded. Skipping...");
     return;
@@ -10,23 +10,36 @@ export const seedDatabase = async (db: DatabaseType) => {
 
   console.log("🌱 Starting database seeding (minimal examples)...");
 
-  // Clear existing data in correct order
-  await query("DELETE FROM historique");
-  await query("DELETE FROM document_tag");
-  await query("DELETE FROM document");
-  await query("DELETE FROM version");
-  await query("DELETE FROM phase");
-  await query("DELETE FROM lot");
-  await query("DELETE FROM projet");
-  await query("DELETE FROM unite");
-  await query("DELETE FROM cmd");
-  await query("DELETE FROM tag");
-  await query("DELETE FROM region");
-  await query("DELETE FROM bet");
-  await query("DELETE FROM type_document");
-  await query("DELETE FROM utilisateur");
-  await query("DELETE FROM departement");
-  await query("DELETE FROM sqlite_sequence");
+  const isPG = !!process.env.DATABASE_URL;
+
+  if (isPG) {
+    // PostgreSQL cleanup
+    await query(`
+      TRUNCATE TABLE 
+        historique, document_tag, document, version, phase, lot, 
+        projet, projet_tag, unite, cmd, tag, region, bet, 
+        type_document, utilisateur, departement 
+      RESTART IDENTITY CASCADE
+    `);
+  } else {
+    // SQLite cleanup
+    await query("DELETE FROM historique");
+    await query("DELETE FROM document_tag");
+    await query("DELETE FROM document");
+    await query("DELETE FROM version");
+    await query("DELETE FROM phase");
+    await query("DELETE FROM lot");
+    await query("DELETE FROM projet");
+    await query("DELETE FROM unite");
+    await query("DELETE FROM cmd");
+    await query("DELETE FROM tag");
+    await query("DELETE FROM region");
+    await query("DELETE FROM bet");
+    await query("DELETE FROM type_document");
+    await query("DELETE FROM utilisateur");
+    await query("DELETE FROM departement");
+    try { await query("DELETE FROM sqlite_sequence"); } catch(e) {}
+  }
 
   // ============================================
   // DEPARTEMENTS
