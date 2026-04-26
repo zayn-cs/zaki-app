@@ -152,8 +152,18 @@ export const setupSQLite = async () => {
 
 export const initSchema = async () => {
   if (process.env.DATABASE_URL) {
+    console.log("🐘 Connecting to PostgreSQL...");
     pgPool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
     
+    // Test connection
+    try {
+      const client = await pgPool.connect();
+      console.log("✅ PostgreSQL connection successful.");
+      client.release();
+    } catch (err) {
+      console.error("❌ PostgreSQL connection failed:", err);
+    }
+
     // Initialize schema for PostgreSQL
     try {
       const migrationPath = path.resolve(process.cwd(), "migrations", "001_initial_schema.sql");
@@ -169,12 +179,42 @@ export const initSchema = async () => {
     
     return pgPool;
   }
+  console.log("📂 No DATABASE_URL found. Using SQLite mode.");
   return await setupSQLite();
 };
 
 export const query = async (text: string, params: any[] = []) => {
   if (pgPool) {
-    return pgPool.query(text, params);
+    let pgSql = text;
+    const originalSql = text;
+
+    // Transform SQLite JSON functions to PostgreSQL
+    // Handle json_group_array(json_object(...))
+    pgSql = pgSql.replace(/json_group_array\s*\(\s*json_object\s*\(([^)]+)\)\s*\)/gi, (match, args) => {
+      return `COALESCE(jsonb_agg(jsonb_build_object(${args})), '[]'::jsonb)`;
+    });
+    // Handle simple json_group_array
+    pgSql = pgSql.replace(/json_group_array\s*\(([^)]+)\)/gi, (match, arg) => {
+      if (arg.toLowerCase().includes('jsonb_build_object')) return match; // already handled
+      return `COALESCE(jsonb_agg(${arg}), '[]'::jsonb)`;
+    });
+
+    if (pgSql !== originalSql) {
+      console.log("🔄 SQL Transformed for PG:", pgSql);
+    } else {
+      console.log("🐘 Executing PG SQL:", pgSql);
+    }
+
+    try {
+      return await pgPool.query(pgSql, params);
+    } catch (err) {
+      console.error("❌ PostgreSQL Query Error:", {
+        message: err instanceof Error ? err.message : err,
+        sql: pgSql,
+        params
+      });
+      throw err;
+    }
   }
 
   if (!sqliteDb) {
@@ -186,11 +226,19 @@ export const query = async (text: string, params: any[] = []) => {
   
   // Convert ILIKE to LIKE for SQLite
   sqliteSql = sqliteSql.replace(/ILIKE/gi, "LIKE");
+
+  // Convert CONCAT(a, b, ...) to (a || b || ...) for SQLite
+  sqliteSql = sqliteSql.replace(/CONCAT\s*\(([^)]+)\)/gi, (match, args) => {
+    return args.split(',').map(part => part.trim()).join(' || ');
+  });
+
+  // Convert NOW() to datetime('now')
+  sqliteSql = sqliteSql.replace(/NOW\s*\(\s*\)/gi, "datetime('now')");
   
   // Convert undefined to null
   const safeParams = params.map(p => p === undefined ? null : p);
   
-  if (text.trim().toUpperCase().startsWith("SELECT") || text.includes("RETURNING")) {
+  if (sqliteSql.trim().toUpperCase().startsWith("SELECT") || sqliteSql.includes("RETURNING")) {
     const stmt = sqliteDb.prepare(sqliteSql);
     const rows: any[] = [];
     if (safeParams && safeParams.length > 0) {

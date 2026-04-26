@@ -106,7 +106,7 @@ router.post("/utilisateurs", requireAuth, requireRole("admin", "coordinateur"), 
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
      RETURNING id, nom, prenom, messager, role, grade, adresse, is_chef_project, id_departement,
        telephone_professional, telephone_personnel`,
-    [nom, prenom, messager, hashed, role || "chef_projet", grade || "", adresse || "",
+    [nom || "", prenom || "", messager, hashed, role || "chef_projet", grade || "", adresse || "",
      telephone_professional || null, telephone_personnel || null, is_chef_project || false,
      id_departement || null]
   );

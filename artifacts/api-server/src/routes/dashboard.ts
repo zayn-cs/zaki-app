@@ -55,8 +55,9 @@ router.get("/dashboard/histogrammes", requireAuth, async (req, res): Promise<voi
       
       result.rows.forEach((row: any) => {
         if (!row.timestamp) return;
-        const dateStr = row.timestamp.substring(0, 10); // YYYY-MM-DD
-        const dateObj = new Date(dateStr);
+        // Handle both string and Date object from different DB drivers
+        const dateObj = typeof row.timestamp === 'string' ? new Date(row.timestamp) : row.timestamp;
+        const dateStr = dateObj.toISOString().substring(0, 10); // YYYY-MM-DD
         
         if (dateObj < tenDaysAgo) {
           totalBefore10Days++;

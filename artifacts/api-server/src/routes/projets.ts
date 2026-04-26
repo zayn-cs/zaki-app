@@ -55,6 +55,8 @@ router.get("/projets", requireAuth, async (req, res): Promise<void> => {
     return row;
   });
   
+  console.log(`📡 GET /projets: Found ${rows.length} rows. First row keys:`, rows.length > 0 ? Object.keys(rows[0]) : 'none');
+
   res.json(rows);
 });
 

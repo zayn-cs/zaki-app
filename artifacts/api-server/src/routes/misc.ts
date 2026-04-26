@@ -64,15 +64,15 @@ router.get("/historique", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.post("/historique", requireAuth, requireRole(...ADMIN_ROLES, ...MANAGER_ROLES), async (req, res): Promise<void> => {
-  const { nom_table, id_ligne, operation, nouvelles_valeurs, anciennes_valeurs, id_utilisateur } = req.body;
-  if (!nom_table || !id_ligne || !operation) {
-    res.status(400).json({ error: "nom_table, id_ligne et operation requis" });
+  const { action, id_utilisateur, entite_type, entite_id, commentaire } = req.body;
+  if (!action || !entite_type || !entite_id) {
+    res.status(400).json({ error: "action, entite_type et entite_id requis" });
     return;
   }
   const result = await query(
-    `INSERT INTO historique (nom_table, id_ligne, operation, nouvelles_valeurs, anciennes_valeurs, id_utilisateur)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [nom_table, id_ligne, operation, nouvelles_valeurs, anciennes_valeurs, id_utilisateur]
+    `INSERT INTO historique (action, id_utilisateur, entite_type, entite_id, commentaire)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [action, id_utilisateur || req.session.user?.id || null, entite_type, entite_id, commentaire]
   );
   res.status(201).json(result.rows[0]);
 });

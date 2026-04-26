@@ -261,11 +261,11 @@ export default function UtilisateursPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase text-slate-500">Prénom *</Label>
+              <Label className="text-xs font-bold uppercase text-slate-500">Prénom <span className="text-slate-400 font-normal">(optionnel)</span></Label>
               <Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} placeholder="Prénom" className="border-slate-300" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase text-slate-500">Nom *</Label>
+              <Label className="text-xs font-bold uppercase text-slate-500">Nom <span className="text-slate-400 font-normal">(optionnel)</span></Label>
               <Input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Nom" className="border-slate-300" />
             </div>
 
@@ -336,7 +336,7 @@ export default function UtilisateursPage() {
 
           <DialogFooter className="bg-slate-50 -mx-6 -mb-6 p-6 mt-6 border-t rounded-b-lg">
             <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-slate-300">Annuler</Button>
-            <Button onClick={() => void handleSave()} disabled={saving || !form.nom || !form.prenom || (!editUser && (!form.messager || !form.mot_pass))} className="bg-blue-600 hover:bg-blue-700 min-w-[120px]">
+            <Button onClick={() => void handleSave()} disabled={saving || (!editUser && (!form.messager || !form.mot_pass))} className="bg-blue-600 hover:bg-blue-700 min-w-[120px]">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
               {editUser ? "Enregistrer" : "Créer le Profil"}
             </Button>

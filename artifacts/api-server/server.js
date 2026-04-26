@@ -14,7 +14,7 @@ execSync("node build.mjs", { stdio: "inherit", cwd: __dirname });
 console.log("🚀 Démarrage du serveur...");
 const server = spawn(
   "node",
-  ["--enable-source-maps", "dist/index.mjs"],
+  ["--env-file=.env", "--enable-source-maps", "dist/index.mjs"],
   { stdio: "inherit", cwd: __dirname }
 );
 
