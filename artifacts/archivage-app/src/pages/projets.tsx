@@ -25,7 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tag as TagIcon } from "lucide-react";
 
 const STADES = ["en cours", "planification", "archivé", "achevé", "en procédure", "non lancé", "à lancer", "résilié", "à résilier"];
-const PRIORITES = ["haute", "moyenne", "basse"];
+const PRIORITES = ["MD_CEM/ANP", "DCIM/MDN", "DG/CMIDI", "Directive de comba"];
 
 interface Projet {
   id_projet: number;
@@ -41,6 +41,8 @@ interface Projet {
   priorite?: string;
   type?: string;
   reference_priorite?: string;
+  zone?: string;
+  block?: string;
   montant_delegue?: number;
   montant_engagement?: number;
   montant_paiement?: number;
@@ -105,6 +107,8 @@ interface ProjetFormData {
   priorite: string;
   type: string;
   reference_priorite: string;
+  zone: string;
+  block: string;
   date_achevement: string;
   chef_projet: string;
   ids_tags: number[];
@@ -114,7 +118,8 @@ const EMPTY_FORM: ProjetFormData = {
   numero: "", id_unite: "", pa: "", numero_op: "", montant_delegue: "0", montant_engagement: "0", montant_paiement: "0",
   programme: "", programme_a_realiser: "", stade: "en cours", situation_objectif: "", contrainte: "", codification_cc: "",
   id_bet: "", delais: "0", debut_etude: "", fin_etude: "", essais: "", fin_prev: "",
-  observation: "", interne: "", priorite: "moyenne", type: "", reference_priorite: "", date_achevement: "", chef_projet: "",
+  observation: "", interne: "", priorite: "MD_CEM/ANP", type: "", reference_priorite: "", date_achevement: "", chef_projet: "",
+  zone: "", block: "",
   ids_tags: [],
 };
 
@@ -193,6 +198,8 @@ export default function ProjetsPage() {
       priorite: p.priorite ?? "",
       type: p.type ?? "",
       reference_priorite: p.reference_priorite ?? "",
+      zone: p.zone ?? "",
+      block: p.block ?? "",
       date_achevement: p.date_achevement ? p.date_achevement.substring(0, 16) : "",
       chef_projet: p.chef_projet?.toString() ?? "",
       ids_tags: p.tags?.map(t => t.id) ?? [],
@@ -278,11 +285,11 @@ export default function ProjetsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gestion des Projets"
+        title="Gestion des Archives"
         description="Administration complète des archives et dossiers techniques"
         action={
           <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="mr-2 h-4 w-4" /> Nouveau Projet
+            <Plus className="mr-2 h-4 w-4" /> Nouvelle Archive
           </Button>
         }
       />
@@ -325,7 +332,7 @@ export default function ProjetsPage() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic">
-                    Aucun projet répertorié
+                    Aucune archive répertoriée
                   </TableCell>
                 </TableRow>
               ) : (
@@ -475,15 +482,24 @@ export default function ProjetsPage() {
             <div className="space-y-1.5">
               <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Priorité</Label>
               <Select value={form.priorite} onValueChange={v => setForm(f => ({ ...f, priorite: v }))}>
-                <SelectTrigger className="border-slate-300 uppercase"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="border-slate-300"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PRIORITES.map(p => <SelectItem key={p} value={p} className="uppercase">{p}</SelectItem>)}
+                  {PRIORITES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Type de Projet</Label>
               <Input value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} placeholder="ex: Route, Bâtiment..." className="border-slate-300" />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Zone</Label>
+              <Input value={form.zone} onChange={e => setForm(f => ({ ...f, zone: e.target.value }))} placeholder="Zone..." className="border-slate-300" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Block</Label>
+              <Input value={form.block} onChange={e => setForm(f => ({ ...f, block: e.target.value }))} placeholder="Block..." className="border-slate-300" />
             </div>
 
             {/* Dates */}
@@ -600,6 +616,8 @@ export default function ProjetsPage() {
                    <div><Label className="text-slate-400 block mb-1">PA / Operation</Label> <span className="font-medium">{detailProjet.pa} / {detailProjet.numero_op ?? "—"}</span></div>
                    <div><Label className="text-slate-400 block mb-1">Unité</Label> <span className="font-medium">{detailProjet.nom_unite ?? "—"}</span></div>
                    <div><Label className="text-slate-400 block mb-1">BET</Label> <span className="font-medium font-bold text-blue-700">{detailProjet.nom_bet ?? "—"}</span></div>
+                   <div><Label className="text-slate-400 block mb-1">Zone</Label> <span className="font-medium">{detailProjet.zone ?? "—"}</span></div>
+                   <div><Label className="text-slate-400 block mb-1">Block</Label> <span className="font-medium">{detailProjet.block ?? "—"}</span></div>
                    <div className="lg:col-span-3">
                      <Label className="text-slate-400 block mb-1">Étiquettes / Tags</Label>
                      <div className="flex flex-wrap gap-2 mt-1">

@@ -33,7 +33,7 @@ router.get("/projets", requireAuth, async (req, res): Promise<void> => {
             p.contrainte, p.codification_cc, p.id_bet, p.delais, 
             p.debut_etude, p.fin_etude, p.essais, p.fin_prev,
             p.observation, p.interne, p.priorite, p.type, 
-            p.reference_priorite, p.date_achevement, p.chef_projet,
+            p.reference_priorite, p.zone, p.block, p.date_achevement, p.chef_projet,
             b.nom_bet, u.nom_unite,
             CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet,
             (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
@@ -66,7 +66,7 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
       numero, id_unite, pa, numero_op, montant_delegue, montant_engagement, montant_paiement,
       programme, programme_a_realiser, stade, situation_objectif, contrainte, codification_cc, 
       id_bet, delais, debut_etude, fin_etude, essais, fin_prev, observation, interne, 
-      priorite, type, reference_priorite, date_achevement, chef_projet, ids_tags
+      priorite, type, reference_priorite, zone, block, date_achevement, chef_projet, ids_tags
     } = req.body;
 
     if (!programme) {
@@ -78,9 +78,9 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
       `INSERT INTO projet (numero, id_unite, pa, numero_op, montant_delegue, montant_engagement,
         montant_paiement, programme, programme_a_realiser, stade, situation_objectif, 
         contrainte, codification_cc, id_bet, delais, debut_etude, fin_etude, essais, 
-        fin_prev, observation, interne, priorite, type, reference_priorite, 
+        fin_prev, observation, interne, priorite, type, reference_priorite, zone, block, 
         date_achevement, chef_projet)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
        RETURNING id as id_projet`,
       [
         numero ?? null, id_unite || null, pa ?? null, numero_op ?? null, 
@@ -89,7 +89,7 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
         contrainte ?? null, codification_cc ?? null, id_bet || null, delais || 0, 
         debut_etude || null, fin_etude || null, essais || null, fin_prev || null, 
         observation ?? null, interne ?? null, priorite ?? null, type ?? null, 
-        reference_priorite ?? null, date_achevement || null, chef_projet || null
+        reference_priorite ?? null, zone ?? null, block ?? null, date_achevement || null, chef_projet || null
       ]
     );
 
@@ -116,7 +116,7 @@ router.post("/projets", requireAuth, requireRole(...PROJECT_ROLES), async (req, 
               p.montant_delegue, p.montant_engagement, p.montant_paiement,
               p.programme, p.programme_a_realiser, p.stade, p.situation_objectif, p.contrainte,
               p.id_bet, p.delais, p.debut_etude, p.fin_etude, p.fin_prev,
-              p.observation, p.priorite, p.type, p.date_achevement, p.chef_projet,
+              p.observation, p.priorite, p.type, p.zone, p.block, p.date_achevement, p.chef_projet,
               b.nom_bet, u.nom_unite,
               COALESCE(usr.prenom, '') || ' ' || COALESCE(usr.nom, '') as nom_chef_projet,
               (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
@@ -150,7 +150,7 @@ router.get("/projets/:id", requireAuth, async (req, res): Promise<void> => {
             p.montant_delegue, p.montant_engagement, p.montant_paiement,
             p.programme, p.programme_a_realiser, p.stade, p.situation_objectif, p.contrainte,
             p.id_bet, p.delais, p.debut_etude, p.fin_etude, p.fin_prev,
-            p.observation, p.priorite, p.type, p.date_achevement, p.chef_projet,
+            p.observation, p.priorite, p.type, p.zone, p.block, p.date_achevement, p.chef_projet,
             b.nom_bet, u.nom_unite,
             CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet,
             (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
@@ -192,7 +192,7 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
     numero, id_unite, pa, numero_op, montant_delegue, montant_engagement, montant_paiement,
     programme, programme_a_realiser, stade, situation_objectif, contrainte, codification_cc, 
     id_bet, delais, debut_etude, fin_etude, essais, fin_prev, observation, interne, 
-    priorite, type, reference_priorite, date_achevement, chef_projet, ids_tags
+    priorite, type, reference_priorite, zone, block, date_achevement, chef_projet, ids_tags
   } = req.body;
 
   await query(
@@ -221,13 +221,15 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
       priorite = COALESCE($22, priorite),
       type = COALESCE($23, type),
       reference_priorite = COALESCE($24, reference_priorite),
-      date_achevement = COALESCE($25, date_achevement),
-      chef_projet = COALESCE($26, chef_projet)
-     WHERE id = $27`,
+      zone = COALESCE($25, zone),
+      block = COALESCE($26, block),
+      date_achevement = COALESCE($27, date_achevement),
+      chef_projet = COALESCE($28, chef_projet)
+     WHERE id = $29`,
     [numero, id_unite, pa, numero_op, montant_delegue, montant_engagement, montant_paiement,
      programme, programme_a_realiser, stade, situation_objectif, contrainte, codification_cc,
      id_bet, delais, debut_etude, fin_etude, essais, fin_prev, observation, interne,
-     priorite, type, reference_priorite, date_achevement, chef_projet, id]
+     priorite, type, reference_priorite, zone, block, date_achevement, chef_projet, id]
   );
 
   // Handle tags update
@@ -252,7 +254,7 @@ router.patch("/projets/:id", requireAuth, requireRole(...PROJECT_ROLES), async (
             p.montant_delegue, p.montant_engagement, p.montant_paiement,
             p.programme, p.programme_a_realiser, p.stade, p.situation_objectif, p.contrainte,
             p.id_bet, p.delais, p.debut_etude, p.fin_etude, p.fin_prev,
-            p.observation, p.priorite, p.type, p.date_achevement, p.chef_projet,
+            p.observation, p.priorite, p.type, p.zone, p.block, p.date_achevement, p.chef_projet,
             b.nom_bet, u.nom_unite,
             CONCAT(usr.prenom, ' ', usr.nom) as nom_chef_projet,
             (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))

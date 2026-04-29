@@ -27,7 +27,7 @@ router.get("/historique", requireAuth, async (req, res): Promise<void> => {
   const lim = limit ? parseInt(limit as string, 10) : 50;
 
   const result = await query(
-    `SELECT h.id, h.action, h.date_action, h.entite_type, h.entite_id, h.commentaire,
+    `SELECT h.id, h.action, h.timestamp as date_action, h.entite_type, h.entite_id, h.commentaire,
             u.prenom || ' ' || u.nom as nom_utilisateur,
             u.messager
      FROM historique h

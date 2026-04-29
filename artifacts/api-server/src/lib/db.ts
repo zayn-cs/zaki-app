@@ -71,7 +71,7 @@ export const setupSQLite = async () => {
   db.run(`CREATE TABLE IF NOT EXISTS projet (
     id INTEGER PRIMARY KEY AUTOINCREMENT, numero TEXT, pa TEXT, numero_op TEXT,
     programme TEXT, programme_a_realiser TEXT, situation_objectif TEXT, contrainte TEXT, stade TEXT,
-    priorite TEXT, type TEXT, reference_priorite TEXT, montant_delegue REAL,
+    priorite TEXT, type TEXT, reference_priorite TEXT, zone TEXT, block TEXT, montant_delegue REAL,
     montant_engagement REAL, montant_paiement REAL, delais INTEGER,
     debut_etude TEXT, fin_etude TEXT, essais TEXT, fin_prev TEXT,
     date_achevement TEXT, observation TEXT, interne TEXT,
@@ -208,11 +208,9 @@ export const query = async (text: string, params: any[] = []) => {
     try {
       return await pgPool.query(pgSql, params);
     } catch (err) {
-      console.error("❌ PostgreSQL Query Error:", {
-        message: err instanceof Error ? err.message : err,
-        sql: pgSql,
-        params
-      });
+      const errorMsg = `❌ PostgreSQL Query Error: ${err instanceof Error ? err.message : err}\nSQL: ${pgSql}\nParams: ${JSON.stringify(params)}\n\n`;
+      fs.appendFileSync(path.resolve(process.cwd(), "db_error.log"), errorMsg);
+      console.error(errorMsg);
       throw err;
     }
   }

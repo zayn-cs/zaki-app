@@ -96,6 +96,8 @@ CREATE TABLE IF NOT EXISTS projet (
     priorite             TEXT,
     type                 TEXT,
     reference_priorite   TEXT,
+    zone                 TEXT,
+    block                TEXT,
     montant_delegue      NUMERIC(18, 2) DEFAULT 0,
     montant_engagement   NUMERIC(18, 2) DEFAULT 0,
     montant_paiement     NUMERIC(18, 2) DEFAULT 0,

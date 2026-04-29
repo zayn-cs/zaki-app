@@ -26,7 +26,7 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Tableau de bord" },
-  { href: "/projets", icon: FolderKanban, label: "Projets" },
+  { href: "/projets", icon: Archive, label: "Archive" },
   { href: "/lots", icon: Layers, label: "Lots" },
   { href: "/documents", icon: Files, label: "Documents" },
   { href: "/recherche", icon: Search, label: "Recherche" },

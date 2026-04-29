@@ -1,0 +1,21 @@
+❌ PostgreSQL Query Error: la colonne h.date_action n'existe pas
+SQL: SELECT h.id, h.action, h.date_action, h.entite_type, h.entite_id, h.commentaire,
+            u.prenom || ' ' || u.nom as nom_utilisateur,
+            u.messager
+     FROM historique h
+     LEFT JOIN utilisateur u ON u.id = h.id_utilisateur
+     
+     ORDER BY h.id DESC
+     LIMIT $1
+Params: [100]
+
+❌ PostgreSQL Query Error: le message bind fournit 32 paramètres, mais l'instruction préparée «  » en requiert 28
+SQL: INSERT INTO projet (numero, id_unite, pa, numero_op, montant_delegue, montant_engagement,
+        montant_paiement, programme, programme_a_realiser, stade, situation_objectif, 
+        contrainte, codification_cc, id_bet, delais, debut_etude, fin_etude, essais, 
+        fin_prev, observation, interne, priorite, type, reference_priorite, zone, block, 
+        date_achevement, chef_projet)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
+       RETURNING id as id_projet
+Params: ["",null,"","",0,0,0,"Archive Test Zone Block 2","","en cours","","","",null,0,null,null,null,null,"","","MD_CEM/ANP","","","","MD_CEM/ANP","","","Zone A","Block B1",null,null]
+
