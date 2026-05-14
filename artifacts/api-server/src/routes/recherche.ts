@@ -86,7 +86,7 @@ router.get("/recherche/projets", requireAuth, async (req, res): Promise<void> =>
 });
 
 router.get("/recherche/documents", requireAuth, async (req, res): Promise<void> => {
-  const { q, id_projet, id_lot, id_phase, id_type, statut, date_debut, date_fin } = req.query;
+  const { q, id_projet, id_lot, id_phase, id_type, statut, date_debut, date_fin, id_tag } = req.query;
   const conditions: string[] = [];
   const params: unknown[] = [];
   let idx = 1;
@@ -130,17 +130,27 @@ router.get("/recherche/documents", requireAuth, async (req, res): Promise<void> 
     conditions.push(`d.date_creation <= $${idx++}`);
     params.push(date_fin);
   }
+  if (id_tag && id_tag !== "all") {
+    const tagId = parseInt(id_tag as string, 10);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM document_tag dt 
+      WHERE dt.id_document = d.id AND dt.id_tag = $${idx++}
+    )`);
+    params.push(tagId);
+  }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const result = await query(
-    `SELECT d.id as id_document, d.nom_doc, d.date_creation, d.commentaire,
+    `SELECT DISTINCT d.id as id_document, d.nom_doc, d.date_creation, d.commentaire,
             d.statut, d.is_global, d.id_phase, d.id_projet, d.id_type,
             td.lib_type as type_document,
             ph.nome_phase,
             p.programme as nom_projet,
             COALESCE(u.prenom, '') || ' ' || COALESCE(u.nom, '') as nom_auteur,
-            v.numero_version, v.fichier_path
+            v.numero_version, v.fichier_path,
+            (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+             FROM tag t JOIN document_tag dt ON dt.id_tag = t.id WHERE dt.id_document = d.id) as tags
      FROM document d
      LEFT JOIN type_document td ON td.id = d.id_type
      LEFT JOIN phase ph ON ph.id = d.id_phase
@@ -153,7 +163,15 @@ router.get("/recherche/documents", requireAuth, async (req, res): Promise<void> 
      LIMIT 100`,
      params
   );
-  res.json(result.rows);
+  
+  const rows = result.rows.map(row => {
+    if (row.tags && typeof row.tags === 'string') {
+      row.tags = JSON.parse(row.tags);
+    }
+    return row;
+  });
+
+  res.json(rows);
 });
 
 export default router;

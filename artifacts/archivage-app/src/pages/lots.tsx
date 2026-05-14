@@ -56,7 +56,7 @@ export default function LotsPage() {
   });
 
   const filtered = lots.filter(l =>
-    !search || l.nom_lot?.toLowerCase().includes(search.toLowerCase()) || l.nom_projet?.toLowerCase().includes(search.toLowerCase())
+    !search || l.nom_lot?.toLowerCase().includes(search.toLowerCase())
   );
 
   const openCreate = () => {
@@ -163,23 +163,19 @@ export default function LotsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nom du lot</TableHead>
-              <TableHead>Projet</TableHead>
               <TableHead>Département</TableHead>
-              <TableHead>Responsable</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun lot trouvé</TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Aucun lot trouvé</TableCell></TableRow>
             ) : filtered.map(l => (
               <TableRow key={l.id_lot} data-testid={`row-lot-${l.id_lot}`}>
                 <TableCell className="font-medium">{l.nom_lot}</TableCell>
-                <TableCell>{l.nom_projet ?? "—"}</TableCell>
                 <TableCell>{l.nom_departement ?? "—"}</TableCell>
-                <TableCell>{l.nom_responsable ?? "—"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2 items-center">
                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(l)} data-testid={`button-edit-lot-${l.id_lot}`}><Pencil className="h-4 w-4" /></Button>
@@ -201,15 +197,6 @@ export default function LotsPage() {
              <div className="space-y-2">
                <Label>Nom du lot *</Label>
                <Input data-testid="input-nom-lot" value={form.nom_lot} onChange={e => setForm(f => ({ ...f, nom_lot: e.target.value }))} placeholder="Nom du lot" />
-             </div>
-             <div className="space-y-2">
-               <Label>Projet</Label>
-               <Select value={form.id_projet} onValueChange={v => setForm(f => ({ ...f, id_projet: v }))}>
-                 <SelectTrigger><SelectValue placeholder="Choisir un projet" /></SelectTrigger>
-                 <SelectContent>
-                   {projets.map(p => <SelectItem key={p.id_projet} value={p.id_projet.toString()}>{p.programme}</SelectItem>)}
-                 </SelectContent>
-               </Select>
              </div>
              <div className="space-y-2">
                <Label>Département</Label>

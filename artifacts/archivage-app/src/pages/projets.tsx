@@ -126,7 +126,8 @@ const EMPTY_FORM: ProjetFormData = {
 export default function ProjetsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
+  const searchParams = new URLSearchParams(window.location.search);
+  const [search, setSearch] = useState(searchParams.get("search") || "");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProjet, setEditProjet] = useState<Projet | null>(null);
   const [form, setForm] = useState<ProjetFormData>(EMPTY_FORM);

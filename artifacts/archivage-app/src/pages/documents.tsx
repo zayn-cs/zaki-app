@@ -32,6 +32,7 @@ interface Document {
   id_type?: number;
   is_global?: boolean;
   id_utilisateur?: number;
+  tags?: any[];
 }
 
 interface Version {
@@ -65,7 +66,7 @@ export default function DocumentsPage() {
   const [statutFilter, setStatutFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDoc, setEditDoc] = useState<Document | null>(null);
-  const [form, setForm] = useState({ nom_doc: "", id_projet: "", id_lot: "", id_phase: "", nom_phase: "", id_type: "", type_name: "", commentaire: "", is_global: "false", id_utilisateur: "" });
+  const [form, setForm] = useState({ nom_doc: "", id_projet: "", id_lot: "", id_phase: "", nom_phase: "", id_type: "", type_name: "", commentaire: "", is_global: "false", id_utilisateur: "", tags: [] as number[] });
   const [saving, setSaving] = useState(false);
   const [uploadDocId, setUploadDocId] = useState<number | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -115,6 +116,11 @@ export default function DocumentsPage() {
     enabled: !!versionsDocId,
   });
 
+  const { data: allTags = [] } = useQuery<any[]>({
+    queryKey: ["tags"],
+    queryFn: () => fetch(apiUrl("/tags"), { credentials: "include" }).then(r => r.json()),
+  });
+
   const filtered = documents.filter(d =>
     !search || d.nom_doc?.toLowerCase().includes(search.toLowerCase()) || d.nom_projet?.toLowerCase().includes(search.toLowerCase())
   );
@@ -131,7 +137,8 @@ export default function DocumentsPage() {
       type_name: "",
       commentaire: "",
       is_global: "false",
-      id_utilisateur: ""
+      id_utilisateur: "",
+      tags: []
     });
     setDialogOpen(true);
   };
@@ -149,6 +156,7 @@ export default function DocumentsPage() {
       commentaire: d.commentaire ?? "",
       is_global: d.is_global ? "true" : "false",
       id_utilisateur: d.id_utilisateur?.toString() ?? "",
+      tags: d.tags ? d.tags.map(t => t.id) : []
     });
     setDialogOpen(true);
   };
@@ -168,6 +176,7 @@ export default function DocumentsPage() {
         commentaire: form.commentaire,
         is_global: form.is_global === "true",
         id_utilisateur: form.id_utilisateur ? parseInt(form.id_utilisateur) : null,
+        tags: form.tags,
       };
 
       const url = editDoc ? apiUrl(`/documents/${editDoc.id_document}`) : apiUrl("/documents");
@@ -308,9 +317,20 @@ export default function DocumentsPage() {
             ) : filtered.map(d => (
               <TableRow key={d.id_document} data-testid={`row-document-${d.id_document}`}>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="font-medium truncate max-w-48">{d.nom_doc}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="font-medium truncate max-w-48">{d.nom_doc}</span>
+                    </div>
+                    {d.tags && d.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {d.tags.map(t => (
+                          <Badge key={t.id} variant="outline" className="text-[10px] py-0 h-4 bg-slate-50">
+                            {t.lib_tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>{d.nom_projet ?? "—"}</TableCell>
@@ -417,6 +437,29 @@ export default function DocumentsPage() {
                   {utilisateurs.filter(u => u.role === "responsable_lot").map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.prenom} {u.nom}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tags / Étiquettes</Label>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {allTags.map(t => {
+                  const isSelected = form.tags.includes(t.id);
+                  return (
+                    <Button
+                      key={t.id}
+                      type="button"
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs rounded-full"
+                      onClick={() => setForm(f => ({
+                        ...f,
+                        tags: isSelected ? f.tags.filter(id => id !== t.id) : [...f.tags, t.id]
+                      }))}
+                    >
+                      {t.lib_tag}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Commentaire</Label>

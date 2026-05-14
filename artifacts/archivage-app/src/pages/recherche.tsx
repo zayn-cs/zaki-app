@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Loader2, FolderKanban, Files, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Loader2, FolderKanban, Files, FileText, Eye, Download } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Link } from "wouter";
 
@@ -34,6 +36,13 @@ export default function RecherchePage() {
   const [tags, setTags] = useState<any[]>([]);
   const [resultatsProjets, setResultatsProjets] = useState<Record<string, unknown>[] | null>(null);
   const [resultatsDocuments, setResultatsDocuments] = useState<Record<string, unknown>[] | null>(null);
+  const [versionsDocId, setVersionsDocId] = useState<number | null>(null);
+
+  const { data: versions = [] } = useQuery<any[]>({
+    queryKey: ["versions", versionsDocId],
+    queryFn: () => fetch(apiUrl(`/documents/${versionsDocId}/versions`), { credentials: "include" }).then(r => r.json()),
+    enabled: !!versionsDocId,
+  });
 
   useEffect(() => {
     fetch(apiUrl("/cmds"), { credentials: "include" })
@@ -76,6 +85,7 @@ export default function RecherchePage() {
         if (q) params.set("q", q);
         if (statut !== "all") params.set("statut", statut);
         if (idType !== "all") params.set("id_type", idType);
+        if (idTag !== "all") params.set("id_tag", idTag);
         const res = await fetch(apiUrl(`/recherche/documents?${params}`), { credentials: "include" });
         setResultatsDocuments(await res.json());
       }
@@ -219,21 +229,38 @@ export default function RecherchePage() {
               </TabsContent>
 
               <TabsContent value="documents" className="mt-0">
-                <div className="space-y-2">
-                  <Label>Type de document</Label>
-                  <Select value={idType} onValueChange={setIdType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tous les types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les types</SelectItem>
-                      {types.map(t => (
-                        <SelectItem key={t.id} value={t.id.toString()}>
-                          {t.lib_type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Type de document</Label>
+                    <Select value={idType} onValueChange={setIdType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les types</SelectItem>
+                        {types.map(t => (
+                          <SelectItem key={t.id} value={t.id.toString()}>
+                            {t.lib_type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tag / Étiquette</Label>
+                    <Select value={idTag} onValueChange={setIdTag}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les tags" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les tags</SelectItem>
+                        {tags.map(t => (
+                          <SelectItem key={t.id} value={t.id.toString()}>{t.lib_tag}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -261,8 +288,8 @@ export default function RecherchePage() {
                </div>
              </div>
            </Tabs>
-         </CardContent>
-       </Card>
+          </CardContent>
+        </Card>
 
       {tab === "projets" && resultatsProjets !== null && (
         <Card>
@@ -275,26 +302,31 @@ export default function RecherchePage() {
             ) : (
               <div className="space-y-2">
                 {resultatsProjets.map((p) => (
-                  <div key={p.id_projet as number} className="p-3 rounded-lg border bg-card" data-testid={`result-projet-${p.id_projet}`}>
+                  <div key={p.id_projet as number} className="p-3 rounded-lg border bg-card hover:bg-slate-50 transition-colors" data-testid={`result-projet-${p.id_projet}`}>
                     <div className="flex items-start justify-between">
                        <div>
-                         <p className="font-medium">{p.programme as string ?? "—"} <span className="text-xs font-normal text-muted-foreground ml-2">({p.numero as string ?? "N/A"})</span></p>
+                         <p className="font-bold text-slate-900">{p.programme as string ?? "—"} <span className="text-xs font-normal text-muted-foreground ml-2">({p.numero as string ?? "N/A"})</span></p>
                          <p className="text-sm text-muted-foreground">
                            {p.pa as string} · {p.numero_op as string} ·
                            {p.nom_unite ? ` ${p.nom_unite}` : " —"} ·
                            {p.nom_cmd ? ` ${p.nom_cmd}` : ""}
                            {p.nom_region ? ` (${p.nom_region})` : ""} ·
-                           {p.nom_chef_projet as string ?? "—"}
+                           <span className="font-medium">{p.nom_chef_projet as string ?? "—"}</span>
                          </p>
                        </div>
 
                         <div className="flex gap-2 items-center">
+                          <Button size="icon" variant="ghost" asChild className="h-8 w-8 text-blue-600 hover:bg-blue-50" title="Voir l'archive">
+                            <Link href={`/projets?search=${encodeURIComponent(p.programme as string)}`}>
+                              <FolderKanban className="h-4 w-4" />
+                            </Link>
+                          </Button>
                           <Button size="icon" variant="ghost" asChild className="h-8 w-8 text-indigo-600 hover:bg-indigo-50" title="Voir les documents">
                             <Link href={`/documents?id_projet=${p.id_projet}`}>
                               <FileText className="h-4 w-4" />
                             </Link>
                           </Button>
-                          <Badge className={`border-0 capitalize ${
+                          <Badge className={`border-0 h-6 capitalize ${
                             p.stade === "en cours" ? "bg-green-100 text-green-700" :
                             p.stade === "planification" ? "bg-blue-100 text-blue-700" :
                             p.stade === "archivé" ? "bg-orange-100 text-orange-700" :
@@ -315,7 +347,7 @@ export default function RecherchePage() {
                               </Badge>
                             ))}
                           </div>
-                          <span className="text-sm font-medium ml-2">{formatCurrency(p.montant_delegue as number)}</span>
+                          <span className="text-sm font-bold text-emerald-600 ml-2">{formatCurrency(p.montant_delegue as number)}</span>
                         </div>
                     </div>
                   </div>
@@ -337,20 +369,43 @@ export default function RecherchePage() {
              ) : (
                <div className="space-y-2">
                  {resultatsDocuments.map((d) => (
-                   <div key={d.id_document as number} className="p-3 rounded-lg border bg-card" data-testid={`result-document-${d.id_document}`}>
-                     <div className="flex items-start justify-between">
-                        <div>
-                           <p className="font-medium">{d.nom_doc as string}</p>
-                          <p className="text-sm text-muted-foreground">{d.nom_projet as string ?? "—"} · {d.nome_phase as string ?? "—"} · {d.nom_auteur as string ?? "—"}</p>
+                   <div key={d.id_document as number} className="p-3 rounded-lg border bg-card hover:bg-slate-50 transition-colors" data-testid={`result-document-${d.id_document}`}>
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-50 rounded-lg">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{d.nom_doc as string}</p>
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium text-slate-600">{d.nom_projet as string ?? "—"}</span> · {d.nome_phase as string ?? "—"} · {d.nom_auteur as string ?? "—"}
+                            </p>
+                          </div>
                         </div>
                          <div className="flex gap-2 items-center">
-                          <Badge className={`border-0 capitalize ${
-                            d.type_document?.toString().toLowerCase() === "administratif" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
-                          }`}>
-                            {d.type_document as string ?? "—"}
-                          </Badge>
-                          <Badge className="border-0 bg-gray-100 text-gray-700 capitalize">{d.statut as string ?? "—"}</Badge>
-                          <span className="text-xs text-muted-foreground">{formatDate(d.date_creation as string)}</span>
+                           <div className="flex flex-col items-end gap-1 mr-4">
+                             <div className="flex gap-1">
+                               <Badge className={`border-0 text-[10px] h-5 capitalize ${
+                                 d.type_document?.toString().toLowerCase() === "administratif" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
+                               }`}>
+                                 {d.type_document as string ?? "—"}
+                               </Badge>
+                               <Badge className="border-0 text-[10px] h-5 bg-slate-100 text-slate-700 capitalize">{d.statut as string ?? "—"}</Badge>
+                             </div>
+                             <span className="text-xs text-muted-foreground">{formatDate(d.date_creation as string)}</span>
+                           </div>
+
+                          <div className="flex flex-wrap gap-1 mr-2">
+                            {(d.tags as any[])?.map((t: any) => (
+                              <Badge key={t.id} variant="outline" className="text-[10px] bg-white text-slate-600 border-slate-200">
+                                {t.lib_tag}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          <Button size="icon" variant="ghost" onClick={() => setVersionsDocId(d.id_document as number)} className="h-9 w-9 text-blue-600 hover:bg-blue-100 border border-blue-100 rounded-full" title="Voir les versions du document">
+                            <Eye className="h-5 w-5" />
+                          </Button>
                         </div>
                       </div>
                    </div>
@@ -360,6 +415,34 @@ export default function RecherchePage() {
            </CardContent>
          </Card>
        )} 
+
+      <Dialog open={!!versionsDocId} onOpenChange={() => setVersionsDocId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Versions du document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {versions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Aucune version disponible</p>
+            ) : versions.map(v => (
+              <div key={v.id_version} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div>
+                  <p className="font-medium">Version {v.numero_version}</p>
+                  <p className="text-sm text-muted-foreground">{v.commentaire}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(v.date_modification)}</p>
+                </div>
+                {v.fichier_path && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`/uploads/${v.fichier_path}`} download>
+                      <Download className="mr-2 h-4 w-4" /> Télécharger
+                    </a>
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

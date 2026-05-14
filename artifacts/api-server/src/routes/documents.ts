@@ -62,6 +62,8 @@ router.get("/documents", requireAuth, async (req, res): Promise<void> => {
             ph.nome_phase,
             CONCAT(u.prenom, ' ', u.nom) as nom_auteur,
             p.programme as nom_projet,
+            (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+             FROM tag t JOIN document_tag dt ON dt.id_tag = t.id WHERE dt.id_document = d.id) as tags,
             v.numero_version, v.fichier_path, v.date_modification as date_version
      FROM document d
      LEFT JOIN type_document td ON td.id = d.id_type
@@ -70,14 +72,22 @@ router.get("/documents", requireAuth, async (req, res): Promise<void> => {
      LEFT JOIN projet p ON p.id = d.id_projet
      LEFT JOIN version v ON v.id = d.id_version
      ${where}
-     ORDER BY d.id DESC`,
+    ORDER BY d.id DESC`,
     params
   );
-  res.json(result.rows);
+  
+  const rows = result.rows.map(row => {
+    if (row.tags && typeof row.tags === 'string') {
+      row.tags = JSON.parse(row.tags);
+    }
+    return row;
+  });
+
+  res.json(rows);
 });
 
 router.post("/documents", requireAuth, requireRole(...ALL_ROLES), async (req, res): Promise<void> => {
-  const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name, id_utilisateur } = req.body;
+  const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name, id_utilisateur, tags } = req.body;
 
   if (!nom_doc) {
     res.status(400).json({ error: "Nom du document requis" });
@@ -126,19 +136,32 @@ router.post("/documents", requireAuth, requireRole(...ALL_ROLES), async (req, re
       `Création du document: ${nom_doc}`
     );
 
+    if (Array.isArray(tags)) {
+      for (const tagId of tags) {
+        await query(`INSERT INTO document_tag (id_document, id_tag) VALUES ($1, $2)`, [newId, tagId]);
+      }
+    }
+
     const full = await query(
       `SELECT d.id as id_document, d.nom_doc, d.chemin, d.is_global,
               d.date_creation, d.id_phase, d.commentaire, d.id_version,
               d.id_projet, d.id_type, d.statut, d.id_utilisateur,
               td.lib_type as type_document,
-              COALESCE(u.prenom, '') || ' ' || COALESCE(u.nom, '') as nom_auteur
+              COALESCE(u.prenom, '') || ' ' || COALESCE(u.nom, '') as nom_auteur,
+              (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+               FROM tag t JOIN document_tag dt ON dt.id_tag = t.id WHERE dt.id_document = d.id) as tags
        FROM document d
        LEFT JOIN type_document td ON td.id = d.id_type
        LEFT JOIN utilisateur u ON u.id = d.id_utilisateur
        WHERE d.id = $1`,
       [newId]
     );
-    res.status(201).json(full.rows[0]);
+    
+    const row = full.rows[0];
+    if (row && row.tags && typeof row.tags === 'string') {
+      row.tags = JSON.parse(row.tags);
+    }
+    res.status(201).json(row);
   } catch (error) {
     console.error("Erreur addition document:", error);
     res.status(500).json({ error: "Erreur lors de la création du document" });
@@ -156,7 +179,9 @@ router.get("/documents/:id", requireAuth, async (req, res): Promise<void> => {
             td.lib_type as type_document,
             ph.nome_phase,
             CONCAT(u.prenom, ' ', u.nom) as nom_auteur,
-            p.programme as nom_projet
+            p.programme as nom_projet,
+            (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+             FROM tag t JOIN document_tag dt ON dt.id_tag = t.id WHERE dt.id_document = d.id) as tags
      FROM document d
      LEFT JOIN type_document td ON td.id = d.id_type
      LEFT JOIN phase ph ON ph.id = d.id_phase
@@ -170,7 +195,12 @@ router.get("/documents/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Document non trouvé" });
     return;
   }
-  res.json(result.rows[0]);
+  
+  const row = result.rows[0];
+  if (row.tags && typeof row.tags === 'string') {
+    row.tags = JSON.parse(row.tags);
+  }
+  res.json(row);
 });
 
 router.patch("/documents/:id", requireAuth, requireRole(...ALL_ROLES), async (req, res): Promise<void> => {
@@ -194,7 +224,7 @@ router.patch("/documents/:id", requireAuth, requireRole(...ALL_ROLES), async (re
   }
 
   try {
-    const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name, id_utilisateur } = req.body;
+    const { nom_doc, is_global, id_phase, nom_phase, id_lot, commentaire, id_projet, id_type, type_name, id_utilisateur, tags } = req.body;
 
     let finalTypeId = id_type || undefined;
     if (type_name) {
@@ -240,19 +270,33 @@ router.patch("/documents/:id", requireAuth, requireRole(...ALL_ROLES), async (re
       `Modification du document id=${id}`
     );
 
+    if (Array.isArray(tags)) {
+      await query(`DELETE FROM document_tag WHERE id_document = $1`, [id]);
+      for (const tagId of tags) {
+        await query(`INSERT INTO document_tag (id_document, id_tag) VALUES ($1, $2)`, [id, tagId]);
+      }
+    }
+
     const result = await query(
       `SELECT d.id as id_document, d.nom_doc, d.chemin, d.is_global,
               d.date_creation, d.id_phase, d.commentaire, d.id_version,
               d.id_projet, d.id_type, d.statut, d.id_utilisateur,
               td.lib_type as type_document,
-              COALESCE(u.prenom, '') || ' ' || COALESCE(u.nom, '') as nom_auteur
+              COALESCE(u.prenom, '') || ' ' || COALESCE(u.nom, '') as nom_auteur,
+              (SELECT json_group_array(json_object('id', t.id, 'lib_tag', t.lib_tag))
+               FROM tag t JOIN document_tag dt ON dt.id_tag = t.id WHERE dt.id_document = d.id) as tags
        FROM document d
        LEFT JOIN type_document td ON td.id = d.id_type
        LEFT JOIN utilisateur u ON u.id = d.id_utilisateur
        WHERE d.id = $1`,
       [id]
     );
-    res.json(result.rows[0]);
+    
+    const row = result.rows[0];
+    if (row && row.tags && typeof row.tags === 'string') {
+      row.tags = JSON.parse(row.tags);
+    }
+    res.json(row);
   } catch (error) {
     console.error("Erreur modification document:", error);
     res.status(500).json({ error: "Erreur lors de la modification du document" });
